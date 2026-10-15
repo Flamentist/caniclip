@@ -32,6 +32,13 @@ and reopen the app.
 
 Change them in Settings from the menu bar icon.
 
+## Window
+
+Choose **Open CaniClip** from the menu bar icon (or ⌘0 when CaniClip is active) for the
+capture hub: large capture tiles plus a history of every screenshot and GIF with reopen,
+copy, reveal and remove. History lives in `~/Library/Application Support/CaniClip/Library`
+and is pruned after 30 days by default (Settings → General → Keep history).
+
 ## Tests
 
     (cd core && cargo test)
@@ -42,4 +49,5 @@ Change them in Settings from the menu bar icon.
 - `core/` Rust crate `caniclip-core`: GifEncoder over gifski, pixelate, UniFFI exports
 - `CaniClip/` Swift app sources; `CaniClip/Generated/` holds UniFFI output (gitignored)
 - `project.yml` XcodeGen definition; `scripts/` build helpers
+- `CaniClip/Library/` capture history store; `CaniClip/Hub/` the hub window and view model
 - `docs/superpowers/` design spec, implementation plan and smoke test

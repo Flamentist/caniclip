@@ -31,3 +31,13 @@ Run before tagging a milestone. Build with `./scripts/run.sh`.
 ## Settings
 - [ ] Each shortcut can be changed and takes effect immediately.
 - [ ] Save folder, frame rate, quality, max width, cursor and max duration persist across relaunch.
+
+## Hub
+- [ ] First launch opens the hub; later launches do not unless "Open window at launch" is on.
+- [ ] Menu bar → Open CaniClip and File → Open CaniClip (⌘0) show the window with a Dock icon and menus.
+- [ ] Tiles capture; the hub hides during the overlay and returns after a capture or a cancelled selection.
+- [ ] New screenshots and GIFs appear at the top with correct thumbnails and badges.
+- [ ] Card actions: Open, Copy, Reveal, Delete (with confirmation; file in save folder untouched).
+- [ ] A record whose file was deleted shows a warning badge with Open/Copy/Reveal disabled.
+- [ ] Closing the hub removes the Dock icon; clicking the Dock icon reopens it.
+- [ ] Settings → Keep history prunes on next launch; Open window at launch works.
