@@ -8,6 +8,7 @@ final class CaptureCoordinator {
     let statusItem: StatusItemController
     let overlay = SelectionOverlayController()
     let capturer = ScreenCapturer()
+    private var editors: [EditorWindowController] = []
 
     init(appState: AppState, preferences: PreferencesStore, statusItem: StatusItemController) {
         self.appState = appState
@@ -93,16 +94,17 @@ final class CaptureCoordinator {
     }
 
     func openEditor(_ image: CGImage) {
-        // Interim behaviour until the editor exists (Task 13): save and copy.
-        do {
-            let url = try saveScreenshot(image)
-            ImageExporter.copyToClipboard(image)
-            NSLog("Saved screenshot to \(url.path)")
-            playCaptureSound()
-        } catch {
-            ErrorPresenter.present(error, title: "Could not save screenshot")
+        let controller = EditorWindowController(image: image, preferences: preferences)
+        controller.onClose = { [weak self, weak controller] in
+            guard let self else { return }
+            self.editors.removeAll { $0 === controller }
+            if self.editors.isEmpty, self.appState.mode == .editing {
+                self.appState.transition(to: .idle)
+            }
         }
-        appState.transition(to: .idle)
+        editors.append(controller)
+        appState.transition(to: .editing)
+        controller.present()
     }
 
     private func playCaptureSound() {
