@@ -7,9 +7,12 @@ cd "$ROOT"
 ./scripts/build-rust.sh
 
 if [ ! -f Local.xcconfig ]; then
-  TEAM="$(security find-certificate -c "Apple Development" -p 2>/dev/null \
+  # No certificate is normal (CI, contributors without an Apple developer
+  # account): the lookup must not abort the script under `set -e`.
+  CERT_NAME="${CANICLIP_SIGNING_CERT:-Apple Development}"
+  TEAM="$( { security find-certificate -c "$CERT_NAME" -p 2>/dev/null \
     | openssl x509 -noout -subject 2>/dev/null \
-    | sed -n 's/.*OU *= *\([A-Z0-9]\{10\}\).*/\1/p' | head -1)"
+    | sed -n 's/.*OU *= *\([A-Z0-9]\{10\}\).*/\1/p' | head -1; } || true )"
   if [ -n "$TEAM" ]; then
     printf 'DEVELOPMENT_TEAM = %s\nCODE_SIGN_STYLE = Automatic\nCODE_SIGN_IDENTITY = Apple Development\n' "$TEAM" > Local.xcconfig
     echo "Local.xcconfig written with team $TEAM"
