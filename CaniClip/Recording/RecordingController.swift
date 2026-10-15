@@ -12,13 +12,25 @@ final class RecordingController: NSObject, SCStreamDelegate {
     enum RecordingError: LocalizedError {
         case alreadyRecording
         case streamStopped(Error)
+        case tooShort
 
         var errorDescription: String? {
             switch self {
             case .alreadyRecording: return "A recording is already in progress."
             case .streamStopped(let e): return "The screen recording stopped: \(e.localizedDescription)"
+            case .tooShort: return "Recording was too short to save."
             }
         }
+    }
+
+    /// Replaces encoder-internal wording with something the user can act on.
+    /// The core reports "no frames were added" when finish runs before any
+    /// frame reached the encoder, i.e. the recording was stopped immediately.
+    static func userFacingError(_ error: Error) -> Error {
+        if case CoreError.Encoding(let message) = error, message == "no frames were added" {
+            return RecordingError.tooShort
+        }
+        return error
     }
 
     private(set) var isRecording = false
@@ -106,7 +118,7 @@ final class RecordingController: NSObject, SCStreamDelegate {
                 let summary = try await sink.finish(to: url, endPresentationTime: stoppedAt)
                 result = .success(Output(url: url, summary: summary))
             } catch {
-                result = .failure(error)
+                result = .failure(Self.userFacingError(error))
             }
             self?.hideChrome()
             self?.stream = nil
