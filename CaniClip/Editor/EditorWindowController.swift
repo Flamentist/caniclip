@@ -2,11 +2,30 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+enum UnsavedChoice {
+    case save, discard, cancel
+}
+
 @MainActor
 final class EditorWindowController: NSWindowController, NSWindowDelegate {
     let editorDocument: EditorDocument
     private let preferences: PreferencesStore
     var onClose: (() -> Void)?
+
+    /// Asks the user what to do with unsaved annotations. Replaceable for tests.
+    var unsavedPrompt: () -> UnsavedChoice = {
+        let alert = NSAlert()
+        alert.messageText = "Save your annotated screenshot?"
+        alert.informativeText = "Your annotations will be lost if you don't save them."
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Don't Save")
+        alert.addButton(withTitle: "Cancel")
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: return .save
+        case .alertSecondButtonReturn: return .discard
+        default: return .cancel
+        }
+    }
 
     init(image: CGImage, preferences: PreferencesStore) {
         self.editorDocument = EditorDocument(image: image)
@@ -93,22 +112,22 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     // MARK: NSWindowDelegate
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
+        confirmClose()
+    }
+
+    /// True when the window may close: clean, saved on request, or discarded.
+    /// Shared by the close button and app termination so ⌘Q cannot bypass it.
+    func confirmClose() -> Bool {
         guard editorDocument.isDirty else { return true }
-        let alert = NSAlert()
-        alert.messageText = "Save your annotated screenshot?"
-        alert.informativeText = "Your annotations will be lost if you don't save them."
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Don't Save")
-        alert.addButton(withTitle: "Cancel")
-        switch alert.runModal() {
-        case .alertFirstButtonReturn:
+        switch unsavedPrompt() {
+        case .save:
             do { try save(); return true } catch {
                 ErrorPresenter.present(error, title: "Could not save")
                 return false
             }
-        case .alertSecondButtonReturn:
+        case .discard:
             return true
-        default:
+        case .cancel:
             return false
         }
     }

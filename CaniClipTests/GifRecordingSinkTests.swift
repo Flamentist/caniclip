@@ -43,4 +43,26 @@ final class GifRecordingSinkTests: XCTestCase {
             guard case CoreError.Encoding = error else { return XCTFail("unexpected \(error)") }
         }
     }
+
+    func testEndPresentationTimeExtendsDuration() async throws {
+        let sink = try GifRecordingSink(settings: GifSettings(maxWidth: nil, maxHeight: nil, quality: 80, fast: true, repeat: 0))
+        sink.append(frame(width: 16, height: 16, shade: 0), presentationTime: 50.0)
+        sink.append(frame(width: 16, height: 16, shade: 120), presentationTime: 50.1)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("caniclip-tail-\(UUID().uuidString).gif")
+        let summary = try await sink.finish(to: url, endPresentationTime: 53.0)
+        XCTAssertEqual(summary.durationSecs, 3.0, accuracy: 1e-6)
+        try FileManager.default.removeItem(at: url)
+    }
+
+    func testFailureCallbackFiresOnceAndStopsAcceptingFrames() async throws {
+        let sink = try GifRecordingSink(settings: GifSettings(maxWidth: nil, maxHeight: nil, quality: 80, fast: true, repeat: 0))
+        let fired = expectation(description: "onFailure")
+        fired.assertForOverFulfill = true
+        sink.onFailure = { _ in fired.fulfill() }
+        sink.append(frame(width: 16, height: 16, shade: 0), presentationTime: 0.0)
+        sink.append(frame(width: 12, height: 16, shade: 10), presentationTime: 0.1)   // size change → encoder error
+        sink.append(frame(width: 12, height: 16, shade: 20), presentationTime: 0.2)   // ignored after failure
+        await fulfillment(of: [fired], timeout: 5)
+        XCTAssertEqual(sink.acceptedFrames, 1)
+    }
 }

@@ -15,6 +15,10 @@ final class GifRecordingSink: @unchecked Sendable {
     private var _accepted = 0
     private var _dropped = 0
 
+    /// Called once, from the encoder queue, the first time a frame fails to encode.
+    /// Frames after a failure are ignored; `finish` then throws the same error.
+    var onFailure: (@Sendable (Error) -> Void)?
+
     var acceptedFrames: Int { lock.withLock { _accepted } }
     var droppedFrames: Int { lock.withLock { _dropped } }
 
@@ -45,15 +49,26 @@ final class GifRecordingSink: @unchecked Sendable {
                                      format: .bgra, timestampSecs: timestamp)
                 lock.withLock { _accepted += 1 }
             } catch {
-                lock.withLock { failure = error }
+                let first = lock.withLock { () -> Bool in
+                    guard failure == nil else { return false }
+                    failure = error
+                    return true
+                }
+                if first { onFailure?(error) }
             }
             lock.withLock { pendingCount -= 1 }
         }
     }
 
     /// Waits for every queued frame, then finalises the GIF at `url`.
-    func finish(to url: URL) async throws -> GifSummary {
-        try await withCheckedThrowingContinuation { continuation in
+    /// `endPresentationTime` (same clock as the frames) holds the last frame until
+    /// the moment recording stopped, so a static ending keeps its real length.
+    func finish(to url: URL, endPresentationTime: Double? = nil) async throws -> GifSummary {
+        let end: Double? = lock.withLock {
+            guard let end = endPresentationTime, let first = firstTimestamp else { return nil }
+            return end - first
+        }
+        return try await withCheckedThrowingContinuation { continuation in
             queue.async { [self] in
                 if let failure = lock.withLock({ self.failure }) {
                     encoder.cancel()
@@ -61,7 +76,7 @@ final class GifRecordingSink: @unchecked Sendable {
                     return
                 }
                 do {
-                    continuation.resume(returning: try encoder.finish(outputPath: url.path))
+                    continuation.resume(returning: try encoder.finish(outputPath: url.path, endTimestampSecs: end))
                 } catch {
                     continuation.resume(throwing: error)
                 }

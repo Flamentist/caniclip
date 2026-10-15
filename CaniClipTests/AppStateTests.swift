@@ -41,4 +41,12 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(s.action(for: .areaScreenshot), .startSelection(.areaScreenshot))
         XCTAssertEqual(s.action(for: .fullScreenScreenshot), .captureFullScreenNow)
     }
+
+    func testHotkeysWhileFinishingAreIgnored() {
+        let s = AppState()
+        s.transition(to: .finishing)
+        XCTAssertEqual(s.action(for: .areaRecording), .ignore)
+        XCTAssertEqual(s.action(for: .areaScreenshot), .ignore)
+        XCTAssertEqual(s.action(for: .fullScreenScreenshot), .ignore)
+    }
 }

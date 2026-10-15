@@ -4,6 +4,8 @@ import Combine
 @MainActor
 final class RecordingHUDModel: ObservableObject {
     @Published var elapsed: TimeInterval = 0
+    /// Recording stopped and the GIF is being written.
+    @Published var isFinishing = false
 }
 
 struct RecordingHUDView: View {
@@ -19,15 +21,21 @@ struct RecordingHUDView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Circle().fill(.red).frame(width: 10, height: 10)
-            Text(timeText)
-                .font(.system(.body, design: .monospaced))
-            Spacer()
-            Button(action: onStop) {
-                Label("Stop", systemImage: "stop.fill")
+            if model.isFinishing {
+                ProgressView().controlSize(.small)
+                Text("Saving…")
+                Spacer()
+            } else {
+                Circle().fill(.red).frame(width: 10, height: 10)
+                Text(timeText)
+                    .font(.system(.body, design: .monospaced))
+                Spacer()
+                Button(action: onStop) {
+                    Label("Stop", systemImage: "stop.fill")
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
             }
-            .keyboardShortcut(.defaultAction)
-            .buttonStyle(.borderedProminent)
         }
         .padding(.horizontal, 12)
     }

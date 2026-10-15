@@ -11,6 +11,7 @@ final class CaptureCoordinator {
     private var editors: [EditorWindowController] = []
     private lazy var recorder: RecordingController = {
         let r = RecordingController(preferences: preferences)
+        r.onStopping = { [weak self] in self?.appState.transition(to: .finishing) }
         r.onFinished = { [weak self] result in self?.recordingFinished(result) }
         return r
     }()
@@ -70,7 +71,16 @@ final class CaptureCoordinator {
             deliverScreenshot(image)
         } catch {
             appState.transition(to: .idle)
-            ErrorPresenter.present(error, title: "Screenshot failed")
+            presentCaptureFailure(error, title: "Screenshot failed")
+        }
+    }
+
+    /// Permission problems get the relaunch explanation; everything else a plain alert.
+    private func presentCaptureFailure(_ error: Error, title: String) {
+        if CaptureFailure.isPermissionDenied(error) {
+            ScreenRecordingPermission.presentRelaunchAlert()
+        } else {
+            ErrorPresenter.present(error, title: title)
         }
     }
 
@@ -88,10 +98,13 @@ final class CaptureCoordinator {
             do {
                 _ = try saveScreenshot(image)
                 playCaptureSound()
+                appState.transition(to: .idle)
             } catch {
+                // Never drop the capture: explain, then hand it to the editor,
+                // whose Save As… lets the user pick a writable location.
                 ErrorPresenter.present(error, title: "Could not save screenshot")
+                openEditor(image)
             }
-            appState.transition(to: .idle)
         }
     }
 
@@ -114,6 +127,26 @@ final class CaptureCoordinator {
         editors.append(controller)
         appState.transition(to: .editing)
         controller.present()
+    }
+
+    var openEditorCount: Int { editors.count }
+    var editorsForTesting: [EditorWindowController] { editors }
+
+    /// Asks every editor with unsaved annotations; false if any of them cancels.
+    func editorsAllowTermination() -> Bool {
+        for editor in editors where editor.editorDocument.isDirty {
+            if !editor.confirmClose() { return false }
+        }
+        return true
+    }
+
+    func closeAllEditorsForTesting() {
+        for editor in editors {
+            editor.window?.delegate = nil
+            editor.close()
+        }
+        editors = []
+        appState.transition(to: .idle)
     }
 
     private func playCaptureSound() {
@@ -161,7 +194,7 @@ final class CaptureCoordinator {
             statusItem.setRecording(true)
         } catch {
             appState.transition(to: .idle)
-            ErrorPresenter.present(error, title: "Could not start recording")
+            presentCaptureFailure(error, title: "Could not start recording")
         }
     }
 
@@ -178,7 +211,16 @@ final class CaptureCoordinator {
             NSSound(named: NSSound.Name("Pop"))?.play()
             presentRecordingResult(output)
         case .failure(let error):
-            ErrorPresenter.present(error, title: "Recording failed")
+            if case CoreError.OutputUnwritable(_, let tempPath) = error {
+                // The GIF is complete but the chosen folder refused it: show the
+                // user where it is instead of losing a whole recording.
+                let kept = URL(fileURLWithPath: tempPath)
+                ErrorPresenter.present(error, title: "Could not save the GIF to your folder")
+                ImageExporter.copyFileToClipboard(kept)
+                NSWorkspace.shared.activateFileViewerSelecting([kept])
+            } else {
+                presentCaptureFailure(error, title: "Recording failed")
+            }
         }
     }
 

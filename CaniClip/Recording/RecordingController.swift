@@ -22,6 +22,8 @@ final class RecordingController: NSObject, SCStreamDelegate {
     }
 
     private(set) var isRecording = false
+    /// Fired when stop begins, before the GIF is written.
+    var onStopping: (() -> Void)?
     var onFinished: ((Result<Output, Error>) -> Void)?
 
     private let preferences: PreferencesStore
@@ -64,6 +66,9 @@ final class RecordingController: NSObject, SCStreamDelegate {
         let settings = GifSettings(maxWidth: prefs.gifMaxWidth.maxWidthValue, maxHeight: nil,
                                    quality: UInt8(min(100, max(1, prefs.gifQuality))), fast: false, repeat: 0)
         let sink = try GifRecordingSink(settings: settings)
+        sink.onFailure = { [weak self] error in
+            Task { @MainActor in self?.encoderFailed(error) }
+        }
         let output = StreamOutput(sink: sink)
         let stream = SCStream(filter: filter, configuration: config, delegate: self)
         try stream.addStreamOutput(output, type: .screen, sampleHandlerQueue: output.queue)
@@ -80,7 +85,14 @@ final class RecordingController: NSObject, SCStreamDelegate {
     func stop() {
         guard isRecording, let stream, let sink else { return }
         isRecording = false
-        hideChrome()
+        // Same clock as the frames' presentation timestamps.
+        let stoppedAt = CMClockGetTime(CMClockGetHostTimeClock()).seconds
+        timer?.invalidate()
+        timer = nil
+        frameWindow?.orderOut(nil)
+        frameWindow = nil
+        hudModel.isFinishing = true
+        onStopping?()
         let folder = preferences.preferences.saveFolderURL
         Task { [weak self] in
             do {
@@ -89,15 +101,34 @@ final class RecordingController: NSObject, SCStreamDelegate {
                 // Stopping after the stream already ended is not a failure for the GIF.
             }
             let url = FileNamer.uniqueURL(in: folder, ext: "gif")
+            let result: Result<Output, Error>
             do {
-                let summary = try await sink.finish(to: url)
-                self?.onFinished?(.success(Output(url: url, summary: summary)))
+                let summary = try await sink.finish(to: url, endPresentationTime: stoppedAt)
+                result = .success(Output(url: url, summary: summary))
             } catch {
-                self?.onFinished?(.failure(error))
+                result = .failure(error)
             }
+            self?.hideChrome()
             self?.stream = nil
             self?.output = nil
             self?.sink = nil
+            self?.onFinished?(result)
+        }
+    }
+
+    /// The encoder rejected a frame mid-recording: stop the stream now and report,
+    /// rather than letting the HUD count on until the user presses Stop.
+    private func encoderFailed(_ error: Error) {
+        guard isRecording, let stream else { return }
+        isRecording = false
+        hideChrome()
+        sink?.cancel()
+        Task { [weak self] in
+            try? await stream.stopCapture()
+            self?.stream = nil
+            self?.output = nil
+            self?.sink = nil
+            self?.onFinished?(.failure(error))
         }
     }
 
@@ -149,5 +180,6 @@ final class RecordingController: NSObject, SCStreamDelegate {
         frameWindow?.orderOut(nil)
         frameWindow = nil
         startedAt = nil
+        hudModel.isFinishing = false
     }
 }

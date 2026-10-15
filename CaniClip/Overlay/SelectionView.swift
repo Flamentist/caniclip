@@ -24,6 +24,10 @@ final class SelectionView: NSView {
     override var acceptsFirstResponder: Bool { true }
     override var mouseDownCanMoveWindow: Bool { false }
 
+    /// The hotkey fires while another app is frontmost; the first click must start
+    /// the drag rather than be swallowed as the activating click.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .crosshair)
     }

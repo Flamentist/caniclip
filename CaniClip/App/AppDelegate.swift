@@ -35,4 +35,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ScreenRecordingPermission.request()
         }
     }
+
+    /// ⌘Q must honour the editor's unsaved-changes prompt like the close button does.
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let coordinator else { return .terminateNow }
+        return coordinator.editorsAllowTermination() ? .terminateNow : .terminateCancel
+    }
 }

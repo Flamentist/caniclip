@@ -10,6 +10,8 @@ enum AppMode: Equatable {
     case selecting(CaptureKind)
     case editing
     case recording
+    /// Recording stopped; the GIF is still being written.
+    case finishing
 }
 
 enum HotkeyAction: Equatable {
@@ -29,6 +31,7 @@ final class AppState: ObservableObject {
         switch (mode, kind) {
         case (.recording, .areaRecording): return .stopRecording
         case (.recording, _): return .ignore
+        case (.finishing, _): return .ignore
         case (.selecting, _): return .ignore
         case (_, .fullScreenScreenshot): return .captureFullScreenNow
         case (_, .areaScreenshot), (_, .areaRecording): return .startSelection(kind)

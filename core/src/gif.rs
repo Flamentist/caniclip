@@ -59,6 +59,9 @@ struct Running {
     height: u32,
     frame_index: usize,
     last_timestamp: f64,
+    /// Copy of the most recent frame, re-added at the stop time so a static
+    /// tail keeps its real duration (gifski ends a GIF at the last frame's pts).
+    last_frame: Option<ImgVec<RGBA8>>,
 }
 
 #[derive(uniffi::Object)]
@@ -137,6 +140,7 @@ fn start(settings: &GifSettings, width: u32, height: u32) -> Result<Running, Cor
         height,
         frame_index: 0,
         last_timestamp: 0.0,
+        last_frame: None,
     })
 }
 
@@ -185,6 +189,7 @@ impl GifEncoder {
             });
         }
         let img = ImgVec::new(to_rgba(pixels, format), width as usize, height as usize);
+        running.last_frame = Some(img.clone());
         running
             .collector
             .add_frame_rgba(running.frame_index, img, timestamp_secs)
@@ -194,7 +199,10 @@ impl GifEncoder {
         Ok(())
     }
 
-    pub fn finish(&self, output_path: String) -> Result<GifSummary, CoreError> {
+    /// Finalises the GIF at `output_path`. When `end_timestamp_secs` is later
+    /// than the last frame, the last frame is held until then, so a recording
+    /// that ends on a static screen keeps its full length.
+    pub fn finish(&self, output_path: String, end_timestamp_secs: Option<f64>) -> Result<GifSummary, CoreError> {
         let mut guard = self.state.lock().map_err(|_| CoreError::Encoding { message: "encoder poisoned".into() })?;
         let previous = std::mem::replace(&mut *guard, State::Finished);
         let running = match previous {
@@ -204,7 +212,19 @@ impl GifEncoder {
         };
         drop(guard);
 
-        let Running { collector, writer, temp_path, frame_index, last_timestamp, .. } = running;
+        let Running { collector, writer, temp_path, frame_index, mut last_timestamp, last_frame, .. } = running;
+        if let (Some(end), Some(frame)) = (end_timestamp_secs, last_frame) {
+            if end > last_timestamp {
+                // gifski gives the final frame the duration of the frame before it.
+                // Re-adding the last frame at the midpoint splits the hold into two
+                // equal halves, so the animation ends exactly at `end`.
+                let midpoint = (end + last_timestamp) / 2.0;
+                collector
+                    .add_frame_rgba(frame_index, frame, midpoint)
+                    .map_err(|e| CoreError::Encoding { message: e.to_string() })?;
+                last_timestamp = end;
+            }
+        }
         drop(collector); // closes the channel so the writer drains and returns
         let write_result = writer.join().map_err(|_| CoreError::Encoding { message: "writer thread panicked".into() })?;
         if let Err(e) = write_result {
@@ -214,8 +234,14 @@ impl GifEncoder {
 
         let dest = PathBuf::from(&output_path);
         if fs::rename(&temp_path, &dest).is_err() {
-            // Cross-volume move: copy then delete.
-            fs::copy(&temp_path, &dest)?;
+            // Cross-volume move: copy then delete. If that fails too, keep the
+            // temp file and tell the caller where it is rather than losing the GIF.
+            if let Err(e) = fs::copy(&temp_path, &dest) {
+                return Err(CoreError::OutputUnwritable {
+                    message: format!("{}: {e}", dest.display()),
+                    temp_path: temp_path.to_string_lossy().into_owned(),
+                });
+            }
             let _ = fs::remove_file(&temp_path);
         }
         let size = fs::metadata(&dest)?.len();

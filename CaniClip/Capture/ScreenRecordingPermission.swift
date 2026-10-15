@@ -20,6 +20,13 @@ enum ScreenRecordingPermission {
     static func ensureGranted() -> Bool {
         if isGranted { return true }
         if request() { return true }
+        presentRelaunchAlert()
+        return false
+    }
+
+    /// Explains that access must be granted in System Settings and the app relaunched.
+    @MainActor
+    static func presentRelaunchAlert() {
         let alert = NSAlert()
         alert.messageText = "CaniClip needs Screen Recording access"
         alert.informativeText = "Turn on CaniClip under System Settings → Privacy & Security → Screen Recording, then quit and reopen CaniClip. macOS applies this permission only after a relaunch."
@@ -30,6 +37,5 @@ enum ScreenRecordingPermission {
         if alert.runModal() == .alertFirstButtonReturn {
             openSystemSettings()
         }
-        return false
     }
 }
