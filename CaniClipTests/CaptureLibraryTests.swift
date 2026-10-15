@@ -195,4 +195,55 @@ final class CaptureLibraryTests: XCTestCase {
         XCTAssertEqual(rec.fileSizeBytes, Int64(png.count))
         XCTAssertThrowsError(try lib.addScreenshot(image, pngData: Data()))
     }
+
+    func testArrayWithNoDecodableRecordsIsTreatedAsCorrupt() throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let index = root.appendingPathComponent("index.json")
+        try Data(#"[{"id":"nope"},{"kind":"what"}]"#.utf8).write(to: index)
+        let lib = CaptureLibrary(rootURL: root)
+        XCTAssertTrue(lib.records.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: index.path))
+        let aside = try FileManager.default.contentsOfDirectory(atPath: root.path).filter { $0.hasPrefix("index.json.corrupt-") }
+        XCTAssertEqual(aside.count, 1)
+    }
+
+    func testUnreadableIndexIsMovedAsideNotOverwritten() throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let index = root.appendingPathComponent("index.json")
+        try Data("[]".utf8).write(to: index)
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: index.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: index.path) }
+        let lib = CaptureLibrary(rootURL: root)
+        XCTAssertTrue(lib.records.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: index.path), "the unreadable file must be moved aside")
+        let aside = try FileManager.default.contentsOfDirectory(atPath: root.path).filter { $0.hasPrefix("index.json.corrupt-") }
+        XCTAssertEqual(aside.count, 1)
+        for name in aside {
+            try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: root.appendingPathComponent(name).path)
+        }
+    }
+
+    func testFailedSaveLeavesNoPhantomRecordOrOrphanedAsset() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        try lib.addScreenshot(red())
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: root.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path) }
+        XCTAssertThrowsError(try lib.addScreenshot(red(8, 8)))
+        XCTAssertEqual(lib.records.count, 1, "a record that was never persisted must not appear in memory")
+        let assets = try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("assets").path)
+        XCTAssertEqual(assets.count, 1, "the asset written for the failed record must be cleaned up")
+    }
+
+    func testPruneSweepsOrphanedLibraryFiles() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        let kept = try lib.addScreenshot(red())
+        let stray = UUID()
+        try Data([1, 2, 3]).write(to: lib.assetURL(for: stray))
+        try Data([4, 5, 6]).write(to: lib.thumbnailURL(for: stray))
+        try lib.prune(olderThan: 0)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: lib.assetURL(for: stray).path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: lib.thumbnailURL(for: stray).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: lib.assetURL(for: kept.id).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: lib.thumbnailURL(for: kept.id).path))
+    }
 }
