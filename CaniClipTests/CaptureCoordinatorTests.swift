@@ -12,6 +12,7 @@ final class CaptureCoordinatorTests: XCTestCase {
 
     override func tearDown() {
         ErrorPresenter.handler = ErrorPresenter.alertHandler
+        if let libraryRoot { try? FileManager.default.removeItem(at: libraryRoot) }
     }
 
     private var libraryRoot: URL!

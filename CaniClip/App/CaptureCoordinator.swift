@@ -131,7 +131,7 @@ final class CaptureCoordinator {
                 let url = try saveScreenshot(pngData: encoded)
                 playCaptureSound()
                 if let recordID = recordScreenshot(image, pngData: encoded) {
-                    try? library.markSaved(id: recordID, to: url, annotated: nil)
+                    do { try library.markSaved(id: recordID, to: url, annotated: nil) } catch { reportLibraryFailure(error) }
                 }
                 appState.transition(to: .idle)
             } catch {
