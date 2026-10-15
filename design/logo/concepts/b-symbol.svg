@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>CaniClip concept B — Marquee Question</title>
+  <!-- the question mark drawn as a marching-ants selection: four dashes, solid dot -->
+  <path fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt" stroke-dasharray="42.7 22"
+        d="M 82 98 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</svg>

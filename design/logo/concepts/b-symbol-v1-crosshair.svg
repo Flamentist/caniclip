@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>CaniClip concept B — Crosshair Question</title>
+  <g fill="none" stroke="#000" stroke-width="22" stroke-linecap="round">
+    <!-- question hook + stem (top arm) -->
+    <path d="M 90 70 A 38 38 0 1 1 128 108 V 126"/>
+    <!-- left, right, bottom arms -->
+    <path d="M 40 160 H 92"/>
+    <path d="M 164 160 H 216"/>
+    <path d="M 128 196 V 228"/>
+  </g>
+  <circle cx="128" cy="160" r="14" fill="#000"/>
+</svg>

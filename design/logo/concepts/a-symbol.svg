@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>CaniClip concept A — Question Frame</title>
+  <g fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- top-right corner that turns into the question mark -->
+    <path d="M 120 44 H 184 A 28 28 0 0 1 212 72 V 84 A 28 28 0 0 1 184 112 H 184 A 22 22 0 0 0 162 134 V 150"/>
+    <!-- bottom-left crop corner -->
+    <path d="M 44 160 V 184 A 28 28 0 0 0 72 212 H 104"/>
+  </g>
+  <circle cx="162" cy="196" r="16" fill="#000"/>
+</svg>

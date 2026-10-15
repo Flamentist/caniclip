@@ -1,0 +1,4 @@
+# Working renders and test sheets; regenerate with build_logo.py and the logo-design scripts
+renders/
+concepts/renders/
+preview.html

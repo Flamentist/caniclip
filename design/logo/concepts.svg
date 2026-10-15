@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="984" viewBox="0 0 1600 984"><defs><filter id="grey"><feColorMatrix type="saturate" values="0"/></filter></defs><rect width="1600" height="984" fill="#f7f7f4"/><text x="60" y="78" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#161616">CaniClip — logo concepts</text><text x="60" y="116" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="20" fill="#6b6b6b">Can I Clip? · greyscale, symbol + lockup, true 64/32/16 px</text><rect x="60" y="150" width="474.667" height="774" rx="18" fill="#fff" stroke="#161616" stroke-width="2"/><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="90" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept A — Question Frame</title>
+  <g fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- top-right corner that turns into the question mark -->
+    <path d="M 120 44 H 184 A 28 28 0 0 1 212 72 V 84 A 28 28 0 0 1 184 112 H 184 A 22 22 0 0 0 162 134 V 150"/>
+    <!-- bottom-left crop corner -->
+    <path d="M 44 160 V 184 A 28 28 0 0 0 72 212 H 104"/>
+  </g>
+  <circle cx="162" cy="196" r="16" fill="#000"/>
+</svg>
+</g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 256" x="90" y="514" width="414.667" height="120" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip lockup A (exploration: live text)</title>
+  <g transform="translate(0 0)">
+  <!--CaniClip concept A — Question Frame-->
+  <g fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- top-right corner that turns into the question mark -->
+    <path d="M 120 44 H 184 A 28 28 0 0 1 212 72 V 84 A 28 28 0 0 1 184 112 H 184 A 22 22 0 0 0 162 134 V 150"/>
+    <!-- bottom-left crop corner -->
+    <path d="M 44 160 V 184 A 28 28 0 0 0 72 212 H 104"/>
+  </g>
+  <circle cx="162" cy="196" r="16" fill="#000"/>
+</g>
+  <text x="276" y="166" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="112" letter-spacing="-3" fill="#000">CaniClip</text>
+</svg>
+</g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="90" y="660" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept A — Question Frame</title>
+  <g fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- top-right corner that turns into the question mark -->
+    <path d="M 120 44 H 184 A 28 28 0 0 1 212 72 V 84 A 28 28 0 0 1 184 112 H 184 A 22 22 0 0 0 162 134 V 150"/>
+    <!-- bottom-left crop corner -->
+    <path d="M 44 160 V 184 A 28 28 0 0 0 72 212 H 104"/>
+  </g>
+  <circle cx="162" cy="196" r="16" fill="#000"/>
+</svg>
+</g><text x="122" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="180" y="692" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept A — Question Frame</title>
+  <g fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- top-right corner that turns into the question mark -->
+    <path d="M 120 44 H 184 A 28 28 0 0 1 212 72 V 84 A 28 28 0 0 1 184 112 H 184 A 22 22 0 0 0 162 134 V 150"/>
+    <!-- bottom-left crop corner -->
+    <path d="M 44 160 V 184 A 28 28 0 0 0 72 212 H 104"/>
+  </g>
+  <circle cx="162" cy="196" r="16" fill="#000"/>
+</svg>
+</g><text x="196" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="238" y="708" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept A — Question Frame</title>
+  <g fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- top-right corner that turns into the question mark -->
+    <path d="M 120 44 H 184 A 28 28 0 0 1 212 72 V 84 A 28 28 0 0 1 184 112 H 184 A 22 22 0 0 0 162 134 V 150"/>
+    <!-- bottom-left crop corner -->
+    <path d="M 44 160 V 184 A 28 28 0 0 0 72 212 H 104"/>
+  </g>
+  <circle cx="162" cy="196" r="16" fill="#000"/>
+</svg>
+</g><text x="246" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="90.0" y="780" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">A · Question Frame</text><text x="90.0" y="808" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#161616" letter-spacing="1.5">RECOMMENDED</text><text x="90.0" y="842" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">A selection frame whose top-right corner</text><text x="90.0" y="868" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">turns into the question.</text><rect x="562.667" y="150" width="474.667" height="774" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="592.667" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept B — Marquee Question</title>
+  <!-- the question mark drawn as a marching-ants selection: four dashes, solid dot -->
+  <path fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt" stroke-dasharray="42.7 22"
+        d="M 82 98 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</svg>
+</g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 256" x="592.667" y="514" width="414.667" height="120" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip lockup B (exploration: live text)</title>
+  <g>
+  <!--CaniClip concept B — Marquee Question-->
+  <!-- the question mark drawn as a marching-ants selection: four dashes, solid dot -->
+  <path fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt" stroke-dasharray="42.7 22"
+        d="M 82 98 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</g>
+  <text x="276" y="166" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="112" letter-spacing="-3" fill="#000">CaniClip</text>
+</svg>
+</g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="592.667" y="660" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept B — Marquee Question</title>
+  <!-- the question mark drawn as a marching-ants selection: four dashes, solid dot -->
+  <path fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt" stroke-dasharray="42.7 22"
+        d="M 82 98 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</svg>
+</g><text x="624.667" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="682.667" y="692" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept B — Marquee Question</title>
+  <!-- the question mark drawn as a marching-ants selection: four dashes, solid dot -->
+  <path fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt" stroke-dasharray="42.7 22"
+        d="M 82 98 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</svg>
+</g><text x="698.667" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="740.667" y="708" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept B — Marquee Question</title>
+  <!-- the question mark drawn as a marching-ants selection: four dashes, solid dot -->
+  <path fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt" stroke-dasharray="42.7 22"
+        d="M 82 98 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</svg>
+</g><text x="748.667" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="592.6666666666667" y="780" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">B · Marquee Question</text><text x="592.6666666666667" y="814" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">The question mark drawn as a marching-ants</text><text x="592.6666666666667" y="840" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">selection.</text><rect x="1065.33" y="150" width="474.667" height="774" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="1095.33" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept C — Snipped Question</title>
+  <g fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt">
+    <path transform="translate(-11.3 -11.3)" d="M 82 98 A 46 46 0 0 1 160.5 65.5"/>
+    <path d="M 160.5 65.5 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  </g>
+  <circle cx="70.7" cy="86.7" r="15.0" fill="#000"/>
+  <circle cx="128" cy="164" r="15.0" fill="#000"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</svg>
+</g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 256" x="1095.33" y="514" width="414.667" height="120" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip lockup C (exploration: live text)</title>
+  <g>
+  <!--CaniClip concept C — Snipped Question-->
+  <g fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt">
+    <path transform="translate(-11.3 -11.3)" d="M 82 98 A 46 46 0 0 1 160.5 65.5"/>
+    <path d="M 160.5 65.5 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  </g>
+  <circle cx="70.7" cy="86.7" r="15.0" fill="#000"/>
+  <circle cx="128" cy="164" r="15.0" fill="#000"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</g>
+  <text x="276" y="166" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="112" letter-spacing="-3" fill="#000">CaniClip</text>
+</svg>
+</g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="1095.33" y="660" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept C — Snipped Question</title>
+  <g fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt">
+    <path transform="translate(-11.3 -11.3)" d="M 82 98 A 46 46 0 0 1 160.5 65.5"/>
+    <path d="M 160.5 65.5 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  </g>
+  <circle cx="70.7" cy="86.7" r="15.0" fill="#000"/>
+  <circle cx="128" cy="164" r="15.0" fill="#000"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</svg>
+</g><text x="1127.33" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="1185.33" y="692" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept C — Snipped Question</title>
+  <g fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt">
+    <path transform="translate(-11.3 -11.3)" d="M 82 98 A 46 46 0 0 1 160.5 65.5"/>
+    <path d="M 160.5 65.5 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  </g>
+  <circle cx="70.7" cy="86.7" r="15.0" fill="#000"/>
+  <circle cx="128" cy="164" r="15.0" fill="#000"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</svg>
+</g><text x="1201.33" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="1243.33" y="708" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title>CaniClip concept C — Snipped Question</title>
+  <g fill="none" stroke="#000" stroke-width="30" stroke-linecap="butt">
+    <path transform="translate(-11.3 -11.3)" d="M 82 98 A 46 46 0 0 1 160.5 65.5"/>
+    <path d="M 160.5 65.5 A 46 46 0 0 1 174 98 A 46 46 0 0 1 128 144 V 164"/>
+  </g>
+  <circle cx="70.7" cy="86.7" r="15.0" fill="#000"/>
+  <circle cx="128" cy="164" r="15.0" fill="#000"/>
+  <circle cx="128" cy="208" r="17" fill="#000"/>
+</svg>
+</g><text x="1251.33" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="1095.3333333333335" y="780" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">C · Snipped Question</text><text x="1095.3333333333335" y="814" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">A question mark with a clean diagonal snip:</text><text x="1095.3333333333335" y="840" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">the clip happening.</text></svg>

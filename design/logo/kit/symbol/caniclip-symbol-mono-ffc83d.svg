@@ -1,0 +1,8 @@
+<svg fill="#ffc83d" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title"><title>CaniClip logo</title>
+  <title id="title">CaniClip logo</title>
+  <g id="symbol">
+    <path fill="#ffc83d" d="M 120 57 L 184 57 A 15 15 0 0 1 199 72 L 199 84 A 15 15 0 0 1 184 99 A 35 35 0 0 0 149 134 L 149 150 A 13 13 0 0 0 162 163 A 13 13 0 0 0 175 150 L 175 134 A 9 9 0 0 1 184 125 A 41 41 0 0 0 225 84 L 225 72 A 41 41 0 0 0 184 31 L 120 31 A 13 13 0 0 0 107 44 A 13 13 0 0 0 120 57 Z"/>
+    <path fill="#ffc83d" d="M 31 160 L 31 184 A 41 41 0 0 0 72 225 L 104 225 A 13 13 0 0 0 117 212 A 13 13 0 0 0 104 199 L 72 199 A 15 15 0 0 1 57 184 L 57 160 A 13 13 0 0 0 44 147 A 13 13 0 0 0 31 160 Z"/>
+    <path fill="#ffc83d" d="M 146 196 A 16 16 0 1 0 178 196 A 16 16 0 1 0 146 196 Z"/>
+  </g>
+</svg>

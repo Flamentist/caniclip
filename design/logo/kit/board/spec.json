@@ -1,0 +1,41 @@
+{
+  "brand": "CaniClip",
+  "tagline": "Can I clip? Yes.",
+  "brief": "A native macOS menu bar app for screenshots, annotation and GIF recording. The name asks a question, \"Can I clip?\", so the mark should carry both the question and the act of capturing, and work from a 16 px menu bar icon to a Dock tile.",
+  "adjectives": ["quick", "curious", "precise", "friendly", "native"],
+  "criteria": "Success: avoids camera and aperture clichés, readable at 16 px, works in one colour, distinct in the Dock.",
+  "industry": "consumer-app",
+  "mockups": ["app-icon", "website", "favicon-tab", "readme", "sticker", "social"],
+  "nav": ["Features", "Shortcuts", "Download"],
+  "brand_color": "#FFC83D",
+  "tile_color": "#FFC83D",
+  "greyscale": false,
+  "final": true,
+  "designer": "CaniClip",
+  "concepts": [
+    {
+      "name": "Question Frame",
+      "symbol": "../masters/caniclip-symbol-ink.svg",
+      "lockup": "../masters/caniclip-horizontal-ink.svg",
+      "stacked": "../masters/caniclip-stacked-ink.svg",
+      "symbol_on_tile": "../masters/caniclip-symbol-ink.svg",
+      "stacked_on_tile": "../masters/caniclip-stacked-ink.svg",
+      "symbol_on_dark": "../masters/caniclip-symbol-reversed.svg",
+      "lockup_on_dark": "../masters/caniclip-horizontal-reversed.svg",
+      "stacked_on_dark": "../masters/caniclip-stacked-reversed.svg",
+      "idea": "A selection frame whose top-right corner turns into a question mark: Can I clip?",
+      "rationale": [
+        "Holds the whole name in one shape: the crop frame is the clip, the hook is the question",
+        "Built from one stroke, one corner radius and one dot, so the wordmark grows from the same parts",
+        "A small-size cut keeps the counter and dot gap open in the 16 px menu bar",
+        "Clip Yellow is rare in the Dock and reads as the annotation highlighter"
+      ]
+    }
+  ],
+  "recommendation": "Ship Question Frame in Ink on light surfaces, Clip Yellow on dark, and Ink on a Clip Yellow tile for the app icon.",
+  "next_steps": [
+    "Drop the AppIcon and MenuBarIcon sets into the Xcode asset catalog",
+    "Use the reversed artwork on dark surfaces only",
+    "Run a professional trademark search before public launch"
+  ]
+}
