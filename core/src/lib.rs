@@ -1,8 +1,10 @@
 uniffi::setup_scaffolding!("caniclip_core");
 
 mod error;
+mod pixelate;
 
 pub use error::CoreError;
+pub use pixelate::pixelate;
 
 /// Semantic version of the core crate, for the About menu and bridge smoke test.
 #[uniffi::export]
