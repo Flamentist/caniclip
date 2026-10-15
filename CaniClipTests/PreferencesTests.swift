@@ -1,4 +1,5 @@
 import XCTest
+import Combine
 @testable import CaniClip
 
 final class PreferencesTests: XCTestCase {
@@ -62,5 +63,32 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(m.gifQuality, 1)
         XCTAssertEqual(m.gifFPS, 60)
         XCTAssertEqual(m.maxRecordingSeconds, 600)
+    }
+}
+
+@MainActor
+final class PreferencesStoreLaunchAtLoginTests: XCTestCase {
+    private func makeStore() -> PreferencesStore {
+        let defaults = UserDefaults(suiteName: "caniclip.tests.launch.\(UUID().uuidString)")!
+        return PreferencesStore(defaults: defaults, key: "prefs")
+    }
+
+    func testReconcileOverwritesStalePreferenceWithSystemState() {
+        let store = makeStore()
+        store.preferences.launchAtLogin = true
+        store.reconcileLaunchAtLogin(isEnabled: false)
+        XCTAssertFalse(store.preferences.launchAtLogin, "the toggle must follow what the system reports")
+        store.reconcileLaunchAtLogin(isEnabled: true)
+        XCTAssertTrue(store.preferences.launchAtLogin)
+    }
+
+    func testReconcileLeavesMatchingPreferenceUntouched() {
+        let store = makeStore()
+        store.preferences.launchAtLogin = true
+        var changes = 0
+        let sub = store.$preferences.dropFirst().sink { _ in changes += 1 }
+        store.reconcileLaunchAtLogin(isEnabled: true)
+        XCTAssertEqual(changes, 0, "no write when the stored value already matches")
+        sub.cancel()
     }
 }

@@ -46,6 +46,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear { store.reconcileLaunchAtLogin(isEnabled: LaunchAtLogin.isEnabled) }
     }
 
     private var shortcuts: some View {

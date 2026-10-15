@@ -23,6 +23,13 @@ final class PreferencesStore: ObservableObject {
         }
     }
 
+    /// Aligns the stored launch-at-login flag with what the system reports, so
+    /// the Settings toggle never shows a value the user changed elsewhere.
+    func reconcileLaunchAtLogin(isEnabled: Bool) {
+        guard preferences.launchAtLogin != isEnabled else { return }
+        preferences.launchAtLogin = isEnabled
+    }
+
     private func save() {
         if let data = try? JSONEncoder().encode(preferences.normalized()) {
             defaults.set(data, forKey: key)
