@@ -3,7 +3,9 @@
 # bindings. Called by scripts/bootstrap.sh and by the Xcode pre-build phase.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Under Xcode the script body is copied into DerivedData, so $0 is useless there;
+# SRCROOT points at the project. Outside Xcode fall back to this file's location.
+ROOT="${SRCROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 CORE="$ROOT/core"
 OUT="$ROOT/CaniClip/Generated"
 export PATH="$HOME/.cargo/bin:$PATH"

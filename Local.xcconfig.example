@@ -1,0 +1,6 @@
+// Copy to Local.xcconfig (gitignored). scripts/bootstrap.sh does this for you
+// and fills in the team from your "Apple Development" certificate. Signing with
+// a real team keeps the Screen Recording permission stable across rebuilds.
+DEVELOPMENT_TEAM = YOURTEAMID
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY = Apple Development
