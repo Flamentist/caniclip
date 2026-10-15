@@ -27,6 +27,20 @@ final class ImageComposerTests: XCTestCase {
         XCTAssertEqual(TestImages.pixel(out, x: 4, y: 24), [0, 0, 255, 255])
     }
 
+    func testOutputKeepsTheBaseColorSpace() {
+        let p3 = CGColorSpace(name: CGColorSpace.displayP3)!
+        let ctx = CGContext(data: nil, width: 8, height: 8, bitsPerComponent: 8, bytesPerRow: 0,
+                            space: p3, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        ctx.setFillColor(CGColor(colorSpace: p3, components: [1, 0, 0, 1])!)
+        ctx.fill(CGRect(x: 0, y: 0, width: 8, height: 8))
+        let base = ctx.makeImage()!
+        XCTAssertEqual(base.colorSpace?.name, CGColorSpace.displayP3)
+
+        let out = ImageComposer.render(base: base, annotations: [], pixelateImage: { _ in nil })!
+        XCTAssertEqual(out.colorSpace?.name, CGColorSpace.displayP3,
+                       "a P3 screenshot must not be re-rendered into sRGB")
+    }
+
     func testPixelateServiceAveragesRegionViaRust() {
         // Left half red, right half blue; pixelating the whole thing with one block gives purple-ish.
         let ctx = CGContext(data: nil, width: 8, height: 4, bitsPerComponent: 8, bytesPerRow: 0,
