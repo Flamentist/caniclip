@@ -10,6 +10,13 @@ final class PixelateService {
         self.base = base
     }
 
+    var cachedCount: Int { cache.count }
+
+    /// Drops cached crops for annotations that are no longer in the document.
+    func evict(keeping ids: Set<UUID>) {
+        cache = cache.filter { ids.contains($0.key) }
+    }
+
     func image(for annotation: Annotation) -> CGImage? {
         guard case .pixelate(let rect, let blockSize) = annotation.kind else { return nil }
         let integral = rect.integral.intersection(CGRect(x: 0, y: 0, width: base.width, height: base.height))

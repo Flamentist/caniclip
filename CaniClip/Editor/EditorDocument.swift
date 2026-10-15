@@ -34,6 +34,7 @@ final class EditorDocument: ObservableObject {
         undoManager.setActionName(actionName)
         annotations = new
         isDirty = true
+        pixelateService.evict(keeping: Set(new.map(\.id)))
     }
 
     /// Live update during a drag; no undo step. Pair with `replaceAnnotations` on mouse up.

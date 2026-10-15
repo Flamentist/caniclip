@@ -44,6 +44,17 @@ final class EditorDocumentTests: XCTestCase {
         XCTAssertTrue(doc.isDirty)
     }
 
+    func testRemovingAPixelateAnnotationEvictsItsCachedCrop() {
+        let doc = makeDoc()
+        let pix = Annotation(kind: .pixelate(CGRect(x: 0, y: 0, width: 8, height: 8), blockSize: 4))
+        doc.add(pix)
+        _ = doc.rasterize()
+        XCTAssertEqual(doc.pixelateService.cachedCount, 1)
+        doc.selectedID = pix.id
+        doc.removeSelected()
+        XCTAssertEqual(doc.pixelateService.cachedCount, 0)
+    }
+
     func testRasterizeKeepsImageSize() {
         let doc = makeDoc()
         doc.add(Annotation(kind: .arrow(from: CGPoint(x: 1, y: 1), to: CGPoint(x: 14, y: 6))))
