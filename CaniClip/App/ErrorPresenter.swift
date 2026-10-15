@@ -16,8 +16,19 @@ enum ErrorPresenter {
         alert.runModal()
     }
 
+    /// True while a handler is running. `runModal` pumps the run loop, so a
+    /// second failure can arrive while the first alert is still up; stacking
+    /// a second modal on top would leave the user with two alerts to dismiss.
+    @MainActor private(set) static var isPresenting = false
+
     @MainActor
     static func present(_ error: Error, title: String) {
+        guard !isPresenting else {
+            NSLog("ErrorPresenter: dropped \"%@\" while another alert is up: %@", title, error.localizedDescription)
+            return
+        }
+        isPresenting = true
+        defer { isPresenting = false }
         handler(error, title)
     }
 }
