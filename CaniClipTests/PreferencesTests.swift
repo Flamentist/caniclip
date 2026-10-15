@@ -23,9 +23,10 @@ final class PreferencesTests: XCTestCase {
     func testRoundTripThroughStore() async throws {
         let defaults = freshDefaults()
         let store = await PreferencesStore(defaults: defaults, key: "prefs")
-        var p = Preferences()
-        p.gifFPS = 20
-        p.afterCapture = .copyToClipboard
+        var mutable = Preferences()
+        mutable.gifFPS = 20
+        mutable.afterCapture = .copyToClipboard
+        let p = mutable
         await MainActor.run { store.preferences = p }
         let reloaded = await PreferencesStore(defaults: defaults, key: "prefs")
         let value = await MainActor.run { reloaded.preferences }
