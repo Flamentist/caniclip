@@ -283,6 +283,24 @@ mod tests {
     }
 
     #[test]
+    fn cancel_removes_the_temp_file() {
+        let enc = GifEncoder::new(GifSettings { max_width: None, max_height: None, quality: 90, fast: true, repeat: 0 })
+            .unwrap();
+        enc.add_frame(vec![0; 4 * 4 * 4], 4, 4, PixelFormat::Rgba, 0.0).unwrap();
+        let temp = match &*enc.state.lock().unwrap() {
+            State::Running(r) => r.temp_path.clone(),
+            _ => panic!("encoder should be running after the first frame"),
+        };
+        assert!(temp.exists(), "temp file should exist while recording");
+        enc.cancel();
+        assert!(!temp.exists(), "cancel must delete {}", temp.display());
+        assert!(matches!(
+            enc.add_frame(vec![0; 4 * 4 * 4], 4, 4, PixelFormat::Rgba, 0.1).unwrap_err(),
+            CoreError::AlreadyFinished
+        ));
+    }
+
+    #[test]
     fn bgra_is_swizzled_in_place_and_viewed_as_rgba() {
         let mut bytes = vec![1, 2, 3, 4, 10, 20, 30, 40];
         let px = as_rgba_in_place(&mut bytes, PixelFormat::Bgra);

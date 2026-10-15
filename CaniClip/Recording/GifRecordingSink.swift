@@ -7,7 +7,7 @@ final class GifRecordingSink: @unchecked Sendable {
     static let maxPending = 10
 
     private let encoder: GifEncoder
-    private let queue = DispatchQueue(label: "com.caniclip.gif-sink", qos: .userInitiated)
+    private let queue: DispatchQueue
     private let lock = NSLock()
     private var pendingCount = 0
     private var firstTimestamp: Double?
@@ -22,8 +22,12 @@ final class GifRecordingSink: @unchecked Sendable {
     var acceptedFrames: Int { lock.withLock { _accepted } }
     var droppedFrames: Int { lock.withLock { _dropped } }
 
-    init(settings: GifSettings) throws {
+    /// `queue` is the serial queue frames are encoded on; tests inject a
+    /// suspended one to exercise the back-pressure path.
+    init(settings: GifSettings,
+         queue: DispatchQueue = DispatchQueue(label: "com.caniclip.gif-sink", qos: .userInitiated)) throws {
         encoder = try GifEncoder(settings: settings)
+        self.queue = queue
     }
 
     func append(_ frame: BGRAFrame, presentationTime: Double) {

@@ -1,4 +1,5 @@
 import XCTest
+import ImageIO
 @testable import CaniClip
 
 final class GifRecordingSinkTests: XCTestCase {
@@ -51,6 +52,33 @@ final class GifRecordingSinkTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("caniclip-tail-\(UUID().uuidString).gif")
         let summary = try await sink.finish(to: url, endPresentationTime: 53.0)
         XCTAssertEqual(summary.durationSecs, 3.0, accuracy: 1e-6)
+        try FileManager.default.removeItem(at: url)
+    }
+
+    func testDropsFramesWhileTheEncoderIsStalledAndStillWritesAGif() async throws {
+        let stalled = DispatchQueue(label: "caniclip.tests.stalled-sink")
+        stalled.suspend()
+        let sink = try GifRecordingSink(settings: GifSettings(maxWidth: nil, maxHeight: nil, quality: 80, fast: true, repeat: 0),
+                                        queue: stalled)
+        let extra = 5
+        for i in 0..<(GifRecordingSink.maxPending + extra) {
+            sink.append(frame(width: 16, height: 16, shade: UInt8(i * 10)), presentationTime: Double(i) / 15.0)
+        }
+        XCTAssertEqual(sink.droppedFrames, extra, "frames beyond maxPending are dropped while the queue is stalled")
+        XCTAssertEqual(sink.acceptedFrames, 0)
+
+        stalled.resume()
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("caniclip-drop-\(UUID().uuidString)-.gif")
+        let summary = try await sink.finish(to: url)
+        XCTAssertEqual(sink.acceptedFrames, GifRecordingSink.maxPending)
+        XCTAssertEqual(summary.frameCount, UInt32(GifRecordingSink.maxPending))
+        XCTAssertGreaterThan(sink.droppedFrames, 0)
+
+        let data = try Data(contentsOf: url)
+        XCTAssertEqual(String(decoding: data.prefix(6), as: UTF8.self), "GIF89a")
+        let source = try XCTUnwrap(CGImageSourceCreateWithURL(url as CFURL, nil))
+        XCTAssertGreaterThan(CGImageSourceGetCount(source), 0, "the GIF must still decode")
+        XCTAssertNotNil(CGImageSourceCreateImageAtIndex(source, 0, nil))
         try FileManager.default.removeItem(at: url)
     }
 
