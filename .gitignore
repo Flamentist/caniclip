@@ -1,0 +1,16 @@
+# Xcode
+CaniClip.xcodeproj/
+xcuserdata/
+DerivedData/
+*.xcworkspace/xcuserdata/
+.build/
+
+# UniFFI generated bindings
+CaniClip/Generated/
+
+# Rust
+core/target/
+target/
+
+# macOS
+.DS_Store
