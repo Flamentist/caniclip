@@ -9,6 +9,13 @@ final class CaptureCoordinator {
     let overlay = SelectionOverlayController()
     let capturer = ScreenCapturer()
     private var editors: [EditorWindowController] = []
+    private lazy var recorder: RecordingController = {
+        let r = RecordingController(preferences: preferences)
+        r.onFinished = { [weak self] result in self?.recordingFinished(result) }
+        return r
+    }()
+    private var armedFrame: RegionFrameWindow?
+    private var startPanel: FloatingPanel?
 
     init(appState: AppState, preferences: PreferencesStore, statusItem: StatusItemController) {
         self.appState = appState
@@ -111,15 +118,71 @@ final class CaptureCoordinator {
         NSSound(named: NSSound.Name("Pop"))?.play()
     }
 
-    // MARK: Recording (filled in by Task 15)
+    // MARK: Recording
 
     func prepareRecording(globalRect: CGRect, screen: NSScreen) {
-        NSLog("prepareRecording(\(globalRect)) on \(screen.localizedName) — implemented in Task 15")
-        appState.transition(to: .idle)
+        let frame = RegionFrameWindow(globalRect: globalRect)
+        frame.setStyle(.armed)
+        frame.orderFrontRegardless()
+        armedFrame = frame
+
+        let label = SelectionGeometry.sizeLabel(for: globalRect, scale: screen.backingScaleFactor)
+        let panel = FloatingPanel(content: RecordStartView(
+            sizeLabel: label,
+            onStart: { [weak self] in
+                self?.dismissArmedChrome()
+                Task { await self?.startRecording(globalRect: globalRect, screen: screen) }
+            },
+            onCancel: { [weak self] in
+                self?.dismissArmedChrome()
+                self?.appState.transition(to: .idle)
+            }
+        ), size: RecordStartView.size)
+        let origin = PanelPlacement.origin(panelSize: RecordStartView.size, nearRegion: globalRect,
+                                           visibleFrame: screen.visibleFrame, gap: 12)
+        NSApp.activate(ignoringOtherApps: true)
+        panel.show(at: origin)
+        startPanel = panel
+    }
+
+    private func dismissArmedChrome() {
+        startPanel?.orderOut(nil)
+        startPanel = nil
+        armedFrame?.orderOut(nil)
+        armedFrame = nil
+    }
+
+    private func startRecording(globalRect: CGRect, screen: NSScreen) async {
+        do {
+            try await recorder.start(globalRect: globalRect, screen: screen)
+            appState.transition(to: .recording)
+            statusItem.setRecording(true)
+        } catch {
+            appState.transition(to: .idle)
+            ErrorPresenter.present(error, title: "Could not start recording")
+        }
     }
 
     func stopRecording() {
-        NSLog("stopRecording — implemented in Task 15")
+        recorder.stop()
+    }
+
+    private func recordingFinished(_ result: Result<RecordingController.Output, Error>) {
+        statusItem.setRecording(false)
+        appState.transition(to: .idle)
+        switch result {
+        case .success(let output):
+            ImageExporter.copyFileToClipboard(output.url)
+            NSSound(named: NSSound.Name("Pop"))?.play()
+            presentRecordingResult(output)
+        case .failure(let error):
+            ErrorPresenter.present(error, title: "Recording failed")
+        }
+    }
+
+    func presentRecordingResult(_ output: RecordingController.Output) {
+        // Interim until Task 16 adds the quick-access popover.
+        NSLog("Saved GIF to \(output.url.path) (\(output.summary.frameCount) frames, \(output.summary.fileSizeBytes) bytes)")
     }
 
     func openSettings() {
