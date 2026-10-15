@@ -29,5 +29,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeys = HotkeyController { kind in coordinator.handle(kind) }
         statusItem = status
         self.coordinator = coordinator
+
+        if !ScreenRecordingPermission.isGranted {
+            ScreenRecordingPermission.request()
+        }
     }
 }
