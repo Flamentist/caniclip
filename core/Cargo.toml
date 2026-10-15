@@ -14,13 +14,13 @@ path = "uniffi-bindgen.rs"
 
 [dependencies]
 uniffi = { version = "0.32", features = ["cli"] }
-gifski = { version = "1.34", default-features = false, features = ["gifsicle"] }
-imgref = "1.12"
+# MIT OR Apache-2.0; colour quantisation via color_quant (MIT). Copyleft
+# encoders (gifski, imagequant) are excluded: see tests/licences.rs.
+gif = "0.14"
 rgb = "0.8"
 thiserror = "2"
 
 [dev-dependencies]
-gif = "0.14"
 
 [profile.release]
 opt-level = 3

@@ -9,7 +9,7 @@ fn frame(width: u32, height: u32, shade: u8) -> Vec<u8> {
     let mut v = Vec::with_capacity((width * height * 4) as usize);
     for y in 0..height {
         for x in 0..width {
-            // A moving diagonal so frames differ and gifski keeps them all.
+            // A moving diagonal so every frame differs and none is merged.
             let on = (x + y + shade as u32) % 8 < 4;
             let c = if on { shade } else { 255 - shade };
             v.extend_from_slice(&[c, c / 2, 255 - c, 255]);
@@ -160,4 +160,41 @@ fn unwritable_output_keeps_temp_file_and_reports_it() {
         }
         other => panic!("unexpected error {other:?}"),
     }
+}
+
+fn decoded_delays(path: &str) -> Vec<u16> {
+    let file = fs::File::open(path).unwrap();
+    let mut decoder = gif::DecodeOptions::new().read_info(file).unwrap();
+    let mut delays = Vec::new();
+    while let Some(f) = decoder.read_next_frame().unwrap() {
+        delays.push(f.delay);
+    }
+    delays
+}
+
+#[test]
+fn merges_identical_consecutive_frames_into_one_held_frame() {
+    let enc = GifEncoder::new(settings()).unwrap();
+    let still = frame(16, 16, 40);
+    for t in [0.0, 0.1, 0.2] {
+        enc.add_frame(still.clone(), 16, 16, PixelFormat::Rgba, t).unwrap();
+    }
+    enc.add_frame(frame(16, 16, 200), 16, 16, PixelFormat::Rgba, 0.3).unwrap();
+    let out = temp_out("merge");
+    let summary = enc.finish(out.clone(), Some(0.4)).unwrap();
+    assert_eq!(summary.frame_count, 4, "frame_count counts frames fed, not frames written");
+    assert_eq!(decoded_delays(&out), vec![30, 10]);
+    fs::remove_file(out).unwrap();
+}
+
+#[test]
+fn frame_delays_follow_the_timestamps() {
+    let enc = GifEncoder::new(settings()).unwrap();
+    for (i, t) in [0.0, 0.05, 0.2].into_iter().enumerate() {
+        enc.add_frame(frame(16, 16, (i * 80) as u8), 16, 16, PixelFormat::Rgba, t).unwrap();
+    }
+    let out = temp_out("delays");
+    enc.finish(out.clone(), Some(0.3)).unwrap();
+    assert_eq!(decoded_delays(&out), vec![5, 15, 10]);
+    fs::remove_file(out).unwrap();
 }

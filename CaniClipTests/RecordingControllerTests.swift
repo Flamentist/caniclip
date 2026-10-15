@@ -9,7 +9,7 @@ final class RecordingControllerTests: XCTestCase {
     }
 
     func testOtherErrorsPassThroughUnchanged() {
-        let error = CoreError.Encoding(message: "gifski failed")
+        let error = CoreError.Encoding(message: "encoder failed")
         XCTAssertEqual(RecordingController.userFacingError(error).localizedDescription, error.localizedDescription)
         let stopped = RecordingController.RecordingError.alreadyRecording
         XCTAssertEqual(RecordingController.userFacingError(stopped).localizedDescription, stopped.localizedDescription)

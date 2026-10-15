@@ -1,21 +1,27 @@
-//! Streaming GIF encoder over gifski. Frames arrive one at a time from Swift;
-//! gifski's Collector/Writer pair must run on different threads, so the writer
-//! thread is spawned lazily on the first frame (when the frame size is known)
-//! and streams into a temp file that `finish` moves into place.
+//! Streaming GIF encoder. Frames arrive one at a time from Swift; each is
+//! scaled, compared with the previous one, and held until the next distinct
+//! frame arrives so its delay is known (GIF delays are per frame, in
+//! centiseconds). Identical consecutive frames are merged into one longer frame.
+//!
+//! Encoding uses the `gif` crate (MIT OR Apache-2.0) with NeuQuant colour
+//! quantisation from `color_quant` (MIT). Output goes to a temp file that
+//! `finish` moves into place.
 
 use std::fs::{self, File};
-use std::io::BufWriter;
+use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::thread::JoinHandle;
 
-use gifski::progress::NoProgress;
-use gifski::{Collector, Repeat, Settings};
-use imgref::ImgVec;
 use rgb::{FromSlice, RGBA8};
 
 use crate::CoreError;
+
+/// GIF viewers commonly bump delays under 2 cs up to 10 cs, which would slow
+/// the animation down, so no frame is written shorter than this.
+const MIN_DELAY_CS: u64 = 2;
+/// Duration of the last frame when nothing else tells us how long it lasts.
+const DEFAULT_LAST_FRAME_CS: u64 = 10;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, uniffi::Enum)]
 pub enum PixelFormat {
@@ -29,9 +35,9 @@ pub struct GifSettings {
     pub max_width: Option<u32>,
     /// Frames taller than this are downscaled to fit, aspect preserved.
     pub max_height: Option<u32>,
-    /// gifski quality 1..=100.
+    /// Quality 1..=100; higher spends more time choosing each frame's palette.
     pub quality: u8,
-    /// gifski fast mode: lower quality, faster.
+    /// Fastest palette selection, lower quality.
     pub fast: bool,
     /// -1 = play once, 0 = loop forever, n = loop n times.
     pub repeat: i32,
@@ -45,23 +51,49 @@ pub struct GifSummary {
 }
 
 enum State {
-    /// No frame yet; gifski is not created because it needs the output size.
+    /// No frame yet; the encoder is not created because it needs the output size.
     Waiting(GifSettings),
     Running(Running),
     Finished,
 }
 
 struct Running {
-    collector: Collector,
-    writer: JoinHandle<Result<(), gifski::Error>>,
+    encoder: gif::Encoder<BufWriter<File>>,
     temp_path: PathBuf,
     width: u32,
     height: u32,
+    out_w: u32,
+    out_h: u32,
+    speed: i32,
+    /// Frames fed, including merged duplicates.
     frame_index: usize,
+    origin: f64,
     last_timestamp: f64,
-    /// Copy of the most recent frame, re-added at the stop time so a static
-    /// tail keeps its real duration (gifski ends a GIF at the last frame's pts).
-    last_frame: Option<ImgVec<RGBA8>>,
+    /// Last distinct frame (already scaled to the output size), not yet written.
+    pending: Option<Vec<u8>>,
+    /// Timeline position in centiseconds where the pending frame starts.
+    cursor_cs: u64,
+    last_delay_cs: Option<u64>,
+}
+
+impl Running {
+    fn centis(&self, t: f64) -> u64 {
+        ((t - self.origin) * 100.0).round().max(0.0) as u64
+    }
+
+    /// Writes the pending frame so that it ends at `end_cs` on the timeline.
+    fn flush_pending(&mut self, end_cs: u64) -> Result<(), CoreError> {
+        let Some(mut rgba) = self.pending.take() else { return Ok(()) };
+        let delay = end_cs.saturating_sub(self.cursor_cs).max(MIN_DELAY_CS);
+        let mut frame = gif::Frame::from_rgba_speed(self.out_w as u16, self.out_h as u16, &mut rgba, self.speed);
+        frame.delay = delay.min(u16::MAX as u64) as u16;
+        self.encoder
+            .write_frame(&frame)
+            .map_err(|e| CoreError::Encoding { message: e.to_string() })?;
+        self.cursor_cs += delay;
+        self.last_delay_cs = Some(delay);
+        Ok(())
+    }
 }
 
 #[derive(uniffi::Object)]
@@ -111,37 +143,79 @@ fn as_rgba_in_place(pixels: &mut [u8], format: PixelFormat) -> &[RGBA8] {
     pixels.as_rgba()
 }
 
+/// Box-filter downscale of tightly packed RGBA: each output pixel averages the
+/// source pixels it covers, which keeps text and UI edges smooth.
+fn downscale(src: &[u8], w: u32, h: u32, ow: u32, oh: u32) -> Vec<u8> {
+    let (w, h, ow, oh) = (w as usize, h as usize, ow as usize, oh as usize);
+    let mut out = vec![0u8; ow * oh * 4];
+    for oy in 0..oh {
+        let y0 = oy * h / oh;
+        let y1 = ((oy + 1) * h / oh).max(y0 + 1).min(h);
+        for ox in 0..ow {
+            let x0 = ox * w / ow;
+            let x1 = ((ox + 1) * w / ow).max(x0 + 1).min(w);
+            let mut sum = [0u32; 4];
+            for y in y0..y1 {
+                let row = y * w * 4;
+                for x in x0..x1 {
+                    let i = row + x * 4;
+                    for c in 0..4 {
+                        sum[c] += src[i + c] as u32;
+                    }
+                }
+            }
+            let n = ((y1 - y0) * (x1 - x0)) as u32;
+            let o = (oy * ow + ox) * 4;
+            for c in 0..4 {
+                out[o + c] = ((sum[c] + n / 2) / n) as u8;
+            }
+        }
+    }
+    out
+}
+
+/// NeuQuant sampling factor (1 = slowest/best, 30 = fastest) for a 1..=100
+/// quality. Quality 100 maps to 10, the crate's recommended balance; anything
+/// slower cannot keep up with a 15 fps recording at 1200 px wide.
+fn speed_for(quality: u8, fast: bool) -> i32 {
+    if fast {
+        return 30;
+    }
+    (30 - quality as i32 / 5).clamp(10, 30)
+}
+
 fn start(settings: &GifSettings, width: u32, height: u32) -> Result<Running, CoreError> {
     let (out_w, out_h) = fitted_size(width, height, settings.max_width, settings.max_height);
-    let repeat = match settings.repeat {
-        r if r < 0 => Repeat::Finite(0),
-        0 => Repeat::Infinite,
-        r => Repeat::Finite(r.min(u16::MAX as i32) as u16),
-    };
-    let gs = Settings {
-        width: Some(out_w),
-        height: Some(out_h),
-        quality: settings.quality,
-        fast: settings.fast,
-        repeat,
-    };
-    let (collector, writer) =
-        gifski::new(gs).map_err(|e| CoreError::Encoding { message: e.to_string() })?;
+    if out_w > u16::MAX as u32 || out_h > u16::MAX as u32 {
+        return Err(CoreError::InvalidInput { message: format!("GIF frames are limited to 65535 px, got {out_w}x{out_h}") });
+    }
     let temp_path = temp_gif_path();
     let file = BufWriter::new(File::create(&temp_path)?);
-    let handle = std::thread::Builder::new()
-        .name("caniclip-gif-writer".into())
-        .spawn(move || writer.write(file, &mut NoProgress {}))
-        .map_err(|e| CoreError::Io { message: e.to_string() })?;
+    let mut encoder = gif::Encoder::new(file, out_w as u16, out_h as u16, &[])
+        .map_err(|e| CoreError::Encoding { message: e.to_string() })?;
+    // No loop extension at all means "play once".
+    let repeat = match settings.repeat {
+        r if r < 0 => None,
+        0 => Some(gif::Repeat::Infinite),
+        r => Some(gif::Repeat::Finite(r.min(u16::MAX as i32) as u16)),
+    };
+    if let Some(repeat) = repeat {
+        encoder.set_repeat(repeat).map_err(|e| CoreError::Encoding { message: e.to_string() })?;
+    }
     Ok(Running {
-        collector,
-        writer: handle,
+        encoder,
         temp_path,
         width,
         height,
+        out_w,
+        out_h,
+        speed: speed_for(settings.quality, settings.fast),
         frame_index: 0,
+        origin: 0.0,
         last_timestamp: 0.0,
-        last_frame: None,
+        pending: None,
+        cursor_cs: 0,
+        last_delay_cs: None,
     })
 }
 
@@ -189,16 +263,23 @@ impl GifEncoder {
                 ),
             });
         }
-        // gifski's collector takes an owned ImgVec, so one memcpy remains here;
-        // the swizzle itself no longer allocates a separate RGBA buffer.
+
         let mut pixels = pixels;
-        let rgba = as_rgba_in_place(&mut pixels, format).to_vec();
-        let img = ImgVec::new(rgba, width as usize, height as usize);
-        running.last_frame = Some(img.clone());
-        running
-            .collector
-            .add_frame_rgba(running.frame_index, img, timestamp_secs)
-            .map_err(|e| CoreError::Encoding { message: e.to_string() })?;
+        as_rgba_in_place(&mut pixels, format);
+        let scaled = if (running.out_w, running.out_h) == (width, height) {
+            pixels
+        } else {
+            downscale(&pixels, width, height, running.out_w, running.out_h)
+        };
+
+        if running.frame_index == 0 {
+            running.origin = timestamp_secs;
+        }
+        if running.pending.as_deref() != Some(scaled.as_slice()) {
+            let start_cs = running.centis(timestamp_secs);
+            running.flush_pending(start_cs)?;
+            running.pending = Some(scaled);
+        }
         running.frame_index += 1;
         running.last_timestamp = timestamp_secs;
         Ok(())
@@ -210,31 +291,35 @@ impl GifEncoder {
     pub fn finish(&self, output_path: String, end_timestamp_secs: Option<f64>) -> Result<GifSummary, CoreError> {
         let mut guard = self.state.lock().map_err(|_| CoreError::Encoding { message: "encoder poisoned".into() })?;
         let previous = std::mem::replace(&mut *guard, State::Finished);
-        let running = match previous {
+        let mut running = match previous {
             State::Running(r) => r,
             State::Waiting(_) => return Err(CoreError::Encoding { message: "no frames were added".into() }),
             State::Finished => return Err(CoreError::AlreadyFinished),
         };
         drop(guard);
 
-        let Running { collector, writer, temp_path, frame_index, mut last_timestamp, last_frame, .. } = running;
-        if let (Some(end), Some(frame)) = (end_timestamp_secs, last_frame) {
-            if end > last_timestamp {
-                // gifski gives the final frame the duration of the frame before it.
-                // Re-adding the last frame at the midpoint splits the hold into two
-                // equal halves, so the animation ends exactly at `end`.
-                let midpoint = (end + last_timestamp) / 2.0;
-                collector
-                    .add_frame_rgba(frame_index, frame, midpoint)
-                    .map_err(|e| CoreError::Encoding { message: e.to_string() })?;
-                last_timestamp = end;
+        let last_cs = running.centis(running.last_timestamp);
+        let mut duration = running.last_timestamp - running.origin;
+        let end_cs = match end_timestamp_secs {
+            Some(end) if end > running.last_timestamp => {
+                duration = end - running.origin;
+                running.centis(end)
             }
-        }
-        drop(collector); // closes the channel so the writer drains and returns
-        let write_result = writer.join().map_err(|_| CoreError::Encoding { message: "writer thread panicked".into() })?;
-        if let Err(e) = write_result {
+            // Without a stop time the last frame lasts as long as the one before it.
+            _ => last_cs + running.last_delay_cs.unwrap_or(DEFAULT_LAST_FRAME_CS),
+        };
+        let temp_path = running.temp_path.clone();
+        let written = running.flush_pending(end_cs).and_then(|_| {
+            let mut file = running
+                .encoder
+                .into_inner()
+                .map_err(|e| CoreError::Encoding { message: e.to_string() })?;
+            file.flush()?;
+            Ok(())
+        });
+        if let Err(e) = written {
             let _ = fs::remove_file(&temp_path);
-            return Err(CoreError::Encoding { message: e.to_string() });
+            return Err(e);
         }
 
         let dest = PathBuf::from(&output_path);
@@ -251,9 +336,9 @@ impl GifEncoder {
         }
         let size = fs::metadata(&dest)?.len();
         Ok(GifSummary {
-            frame_count: frame_index as u32,
+            frame_count: running.frame_index as u32,
             file_size_bytes: size,
-            duration_secs: last_timestamp,
+            duration_secs: duration,
         })
     }
 
@@ -262,9 +347,9 @@ impl GifEncoder {
         let Ok(mut guard) = self.state.lock() else { return };
         let previous = std::mem::replace(&mut *guard, State::Finished);
         drop(guard);
-        if let State::Running(Running { collector, writer, temp_path, .. }) = previous {
-            drop(collector);
-            let _ = writer.join();
+        if let State::Running(running) = previous {
+            let temp_path = running.temp_path.clone();
+            drop(running);
             let _ = fs::remove_file(temp_path);
         }
     }
@@ -306,6 +391,22 @@ mod tests {
         let px = as_rgba_in_place(&mut bytes, PixelFormat::Bgra);
         assert_eq!(px, &[RGBA8::new(3, 2, 1, 4), RGBA8::new(30, 20, 10, 40)]);
         assert_eq!(bytes, vec![3, 2, 1, 4, 30, 20, 10, 40], "swizzle must happen in the caller's buffer");
+    }
+
+    #[test]
+    fn downscale_averages_each_covered_block() {
+        // 2x2 → 1x1: the average of black, white, black, white is mid grey.
+        let src = vec![0, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255];
+        assert_eq!(downscale(&src, 2, 2, 1, 1), vec![128, 128, 128, 255]);
+    }
+
+    #[test]
+    fn speed_tracks_quality() {
+        assert_eq!(speed_for(100, false), 10);
+        assert_eq!(speed_for(90, false), 12);
+        assert_eq!(speed_for(50, false), 20);
+        assert_eq!(speed_for(1, false), 30);
+        assert_eq!(speed_for(100, true), 30);
     }
 
     #[test]
