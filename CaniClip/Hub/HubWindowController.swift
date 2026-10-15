@@ -21,10 +21,15 @@ final class HubWindowController: NSWindowController, NSWindowDelegate {
 
     required init?(coder: NSCoder) { fatalError("not used") }
 
-    var isShowing: Bool { window?.isVisible ?? false }
+    /// Visible and not sitting in the Dock as a miniaturised window.
+    var isShowing: Bool {
+        guard let window else { return false }
+        return window.isVisible && !window.isMiniaturized
+    }
 
     func present() {
         NSApp.activate(ignoringOtherApps: true)
+        if window?.isMiniaturized == true { window?.deminiaturize(nil) }
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
     }

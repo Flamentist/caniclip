@@ -51,4 +51,22 @@ final class HubRulesTests: XCTestCase {
         r.hubClosed()
         XCTAssertNil(r.action(for: .idle, hubVisible: false))
     }
+
+    @MainActor
+    func testHubIsShowingOnlyWhileVisibleAndNotMiniaturised() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("caniclip-hubwin-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let vm = HubViewModel(library: CaptureLibrary(rootURL: root))
+        let noop = HubActions(captureArea: {}, captureFullScreen: {}, recordArea: {}, openSettings: {}, openSaveFolder: {},
+                              openRecord: { _ in }, copyRecord: { _ in }, revealRecord: { _ in }, deleteRecord: { _ in })
+        let hub = HubWindowController(viewModel: vm, actions: noop)
+        XCTAssertFalse(hub.isShowing)
+        hub.window?.orderFront(nil)
+        XCTAssertTrue(hub.isShowing)
+        hub.window?.orderOut(nil)
+        XCTAssertFalse(hub.isShowing)
+        // Miniaturising has no effect on a headless window in the test host, so the
+        // Dock round-trip is covered by the smoke test, not here.
+        hub.close()
+    }
 }

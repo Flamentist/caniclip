@@ -2,14 +2,12 @@ import SwiftUI
 
 struct CaptureCard: View {
     let record: CaptureRecord
-    let thumbnailURL: URL
+    let thumbnail: NSImage?
     let isMissing: Bool
     let isSelected: Bool
     let relativeTime: String
     let actions: HubActions
     @State private var hovering = false
-
-    private var thumbnail: NSImage? { NSImage(contentsOf: thumbnailURL) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {

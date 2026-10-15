@@ -1,4 +1,5 @@
 import SwiftUI
+import KeyboardShortcuts
 
 struct HubView: View {
     @ObservedObject var viewModel: HubViewModel
@@ -64,13 +65,14 @@ struct HubView: View {
                         .padding(.horizontal, 20)
                     LazyVGrid(columns: columns, alignment: .leading, spacing: 14) {
                         ForEach(section.records) { record in
+                            let missing = viewModel.isMissing(record)
                             CaptureCard(record: record,
-                                        thumbnailURL: viewModel.library.thumbnailURL(for: record.id),
-                                        isMissing: viewModel.isMissing(record),
+                                        thumbnail: viewModel.thumbnail(for: record),
+                                        isMissing: missing,
                                         isSelected: viewModel.selection == record.id,
-                                        relativeTime: HubViewModel.relativeTime(record.createdAt, now: Date()),
+                                        relativeTime: HubViewModel.relativeTime(record.createdAt, now: viewModel.now),
                                         actions: actions)
-                                .onTapGesture(count: 2) { if !viewModel.isMissing(record) { actions.openRecord(record) } }
+                                .onTapGesture(count: 2) { if !missing { actions.openRecord(record) } }
                                 .onTapGesture { viewModel.selection = record.id }
                         }
                     }
@@ -82,10 +84,17 @@ struct HubView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
+        let labels = HubViewModel.ShortcutLabels(
+            area: KeyboardShortcuts.getShortcut(for: .captureArea)?.description ?? "the area shortcut",
+            fullScreen: KeyboardShortcuts.getShortcut(for: .captureFullScreen)?.description ?? "the full-screen shortcut",
+            record: KeyboardShortcuts.getShortcut(for: .recordArea)?.description ?? "the record shortcut")
+        let text = HubViewModel.emptyStateText(filter: viewModel.filter,
+                                               hasAnyRecords: !viewModel.library.records.isEmpty,
+                                               shortcuts: labels)
+        return VStack(spacing: 10) {
             Image(systemName: "photo.on.rectangle.angled").font(.system(size: 42)).foregroundStyle(.secondary)
-            Text("No captures yet").font(.title3.weight(.medium))
-            Text("Use the tiles above or press a shortcut from any app. Screenshots and GIFs you capture will appear here.")
+            Text(text.title).font(.title3.weight(.medium))
+            Text(text.message)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 420)

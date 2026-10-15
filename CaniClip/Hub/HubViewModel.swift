@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 
@@ -14,16 +15,60 @@ final class HubViewModel: ObservableObject {
         var id: String { title }
     }
 
+    struct ShortcutLabels {
+        var area: String
+        var fullScreen: String
+        var record: String
+    }
+
     @Published var filter: Filter = .all
     @Published var selection: UUID?
+    /// Advances every minute so relative times stay current while the hub is open.
+    @Published private(set) var now = Date()
     let library: CaptureLibrary
     private var cancellables: Set<AnyCancellable> = []
+    private let thumbnails = NSCache<NSString, NSImage>()
 
     init(library: CaptureLibrary) {
         self.library = library
         library.objectWillChange
-            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .sink { [weak self] _ in
+                self?.thumbnails.removeAllObjects()
+                self?.objectWillChange.send()
+            }
             .store(in: &cancellables)
+        Timer.publish(every: 60, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] date in self?.tick(now: date) }
+            .store(in: &cancellables)
+    }
+
+    func tick(now date: Date = Date()) {
+        now = date
+    }
+
+    /// Thumbnail for a card, cached until the library changes.
+    func thumbnail(for record: CaptureRecord) -> NSImage? {
+        let key = record.id.uuidString as NSString
+        if let cached = thumbnails.object(forKey: key) { return cached }
+        guard let image = NSImage(contentsOf: library.thumbnailURL(for: record.id)) else { return nil }
+        thumbnails.setObject(image, forKey: key)
+        return image
+    }
+
+    static func emptyStateText(filter: Filter, hasAnyRecords: Bool, shortcuts: ShortcutLabels) -> (title: String, message: String) {
+        if hasAnyRecords {
+            switch filter {
+            case .gifs:
+                return ("No GIFs yet", "Switch the filter to All to see everything you have captured, or record a GIF with \(shortcuts.record).")
+            case .screenshots:
+                return ("No screenshots yet", "Switch the filter to All to see everything you have captured, or capture one with \(shortcuts.area).")
+            case .all:
+                break
+            }
+        }
+        return ("No captures yet",
+                "Press \(shortcuts.area) to capture an area, \(shortcuts.fullScreen) for the full screen, or \(shortcuts.record) to record a GIF. Captures appear here.")
     }
 
     var visibleRecords: [CaptureRecord] {
