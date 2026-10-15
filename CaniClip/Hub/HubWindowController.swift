@@ -6,11 +6,15 @@ final class HubWindowController: NSWindowController, NSWindowDelegate {
     var onClose: (() -> Void)?
 
     init(viewModel: HubViewModel, actions: HubActions) {
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 900, height: 600),
-                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 760, height: 520),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
         window.title = "CaniClip"
-        window.minSize = CGSize(width: 640, height: 420)
+        // The content draws its own header, so the system title bar fades into it.
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
+        window.minSize = CGSize(width: 560, height: 380)
         window.isReleasedWhenClosed = false
         window.setFrameAutosaveName("CaniClipHub")
         window.contentView = NSHostingView(rootView: HubView(viewModel: viewModel, actions: actions))

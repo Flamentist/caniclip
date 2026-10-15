@@ -67,8 +67,7 @@ final class HubViewModel: ObservableObject {
                 break
             }
         }
-        return ("No captures yet",
-                "Press \(shortcuts.area) to capture an area, \(shortcuts.fullScreen) for the full screen, or \(shortcuts.record) to record a GIF. Captures appear here.")
+        return ("No captures yet", "Screenshots and GIFs you capture will appear here.")
     }
 
     var visibleRecords: [CaptureRecord] {

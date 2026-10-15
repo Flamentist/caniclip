@@ -10,7 +10,7 @@ struct CaptureCard: View {
     @State private var hovering = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .topTrailing) {
                 Group {
                     if let thumbnail {
@@ -22,7 +22,7 @@ struct CaptureCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 .aspectRatio(16 / 10, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                 HStack(spacing: 4) {
                     if isMissing {
@@ -30,23 +30,26 @@ struct CaptureCard: View {
                     }
                     Image(systemName: record.kind == .gif ? "film" : "camera")
                 }
-                .font(.caption.weight(.semibold))
-                .padding(6)
+                .font(.caption2.weight(.semibold))
+                .padding(5)
                 .background(.thinMaterial, in: Capsule())
-                .padding(8)
+                .padding(6)
 
                 if hovering {
                     actionStrip
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 }
             }
-            Text(relativeTime).font(.subheadline)
-            Text("\(HubViewModel.dimensionsText(record)) · \(HubViewModel.sizeText(bytes: record.fileSizeBytes))")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(relativeTime).font(.subheadline.weight(.medium))
+                Text("\(HubViewModel.dimensionsText(record)) · \(HubViewModel.sizeText(bytes: record.fileSizeBytes))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 2)
         }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear))
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
@@ -62,9 +65,9 @@ struct CaptureCard: View {
             stripButton("Reveal", "folder") { actions.revealRecord(record) }.disabled(isMissing)
             stripButton("Delete", "trash") { actions.deleteRecord(record) }
         }
-        .padding(6)
+        .padding(5)
         .background(.regularMaterial, in: Capsule())
-        .padding(8)
+        .padding(6)
     }
 
     private func stripButton(_ help: String, _ symbol: String, action: @escaping () -> Void) -> some View {

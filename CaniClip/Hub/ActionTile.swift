@@ -1,6 +1,7 @@
 import SwiftUI
 import KeyboardShortcuts
 
+/// Compact capture action: a tinted icon square beside the title and its shortcut.
 struct ActionTile: View {
     let title: String
     let symbol: String
@@ -15,26 +16,37 @@ struct ActionTile: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
-                Image(systemName: symbol)
-                    .font(.system(size: 26, weight: .medium))
-                    .foregroundStyle(tint)
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(tint.gradient)
+                    Image(systemName: symbol)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 36, height: 36)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    KeyCap(text: shortcutText)
+                }
                 Spacer(minLength: 0)
-                Text(title).font(.headline)
-                Text(shortcutText)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity)
+            .frame(height: 64)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(hovering ? tint.opacity(0.6) : Color.primary.opacity(0.08), lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(tint.opacity(hovering ? 0.08 : 0)))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.primary.opacity(hovering ? 0.18 : 0.08), lineWidth: 1))
             )
-            .scaleEffect(hovering ? 1.01 : 1)
             .animation(.easeOut(duration: 0.12), value: hovering)
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
