@@ -161,9 +161,30 @@ final class CaptureLibrary: ObservableObject {
         try data.write(to: indexURL, options: .atomic)
     }
 
+    /// Decodes one record, yielding nil instead of failing the whole array.
+    private struct FailableRecord: Decodable {
+        let record: CaptureRecord?
+        init(from decoder: Decoder) {
+            record = try? CaptureRecord(from: decoder)
+        }
+    }
+
+    /// A missing index is an empty library. An index that cannot be decoded at
+    /// all is moved aside (never overwritten); individually bad records are skipped.
     private static func load(from url: URL) -> [CaptureRecord] {
         guard let data = try? Data(contentsOf: url) else { return [] }
-        let d = JSONDecoder()
-        return (try? d.decode([CaptureRecord].self, from: data)) ?? []
+        do {
+            return try JSONDecoder().decode([FailableRecord].self, from: data).compactMap(\.record)
+        } catch {
+            NSLog("CaptureLibrary: index.json is unreadable (%@); moving it aside", error.localizedDescription)
+            let aside = url.deletingLastPathComponent()
+                .appendingPathComponent("index.json.corrupt-\(Int(Date().timeIntervalSince1970))")
+            do {
+                try FileManager.default.moveItem(at: url, to: aside)
+            } catch {
+                NSLog("CaptureLibrary: could not move the corrupt index aside: %@", error.localizedDescription)
+            }
+            return []
+        }
     }
 }

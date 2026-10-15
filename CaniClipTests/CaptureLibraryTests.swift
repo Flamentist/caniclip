@@ -154,4 +154,35 @@ final class CaptureLibraryTests: XCTestCase {
         let jpeg = ThumbnailMaker.jpegData(thumb)!
         XCTAssertEqual([UInt8](jpeg.prefix(2)), [0xFF, 0xD8])
     }
+
+    func testCorruptIndexIsMovedAsideAndLibraryStartsEmpty() throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let garbage = Data([0x00, 0xFF, 0x7B, 0x5B, 0x13, 0x37])
+        try garbage.write(to: root.appendingPathComponent("index.json"))
+        let lib = CaptureLibrary(rootURL: root)
+        XCTAssertTrue(lib.records.isEmpty)
+        let names = try FileManager.default.contentsOfDirectory(atPath: root.path)
+        XCTAssertFalse(names.contains("index.json"))
+        let aside = names.filter { $0.hasPrefix("index.json.corrupt-") }
+        XCTAssertEqual(aside.count, 1)
+        XCTAssertEqual(try Data(contentsOf: root.appendingPathComponent(aside[0])), garbage, "the evidence is preserved")
+    }
+
+    func testOneUndecodableRecordDoesNotDiscardTheRest() throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let valid = CaptureRecord(id: UUID(), kind: .screenshot, createdAt: Date(timeIntervalSince1970: 1_700_000_000),
+                                  pixelWidth: 4, pixelHeight: 3, fileSizeBytes: 12, savedPath: nil,
+                                  hasLibraryAsset: true, durationSeconds: nil, frameCount: nil)
+        let validJSON = try JSONEncoder().encode(valid)
+        var data = Data("[".utf8)
+        data.append(validJSON)
+        data.append(Data(",{\"id\":\"not-a-uuid\"}]".utf8))
+        let index = root.appendingPathComponent("index.json")
+        try data.write(to: index)
+        let lib = CaptureLibrary(rootURL: root)
+        XCTAssertEqual(lib.records, [valid])
+        XCTAssertEqual(try Data(contentsOf: index), data, "index.json is untouched")
+        let names = try FileManager.default.contentsOfDirectory(atPath: root.path)
+        XCTAssertFalse(names.contains { $0.hasPrefix("index.json.corrupt-") })
+    }
 }
