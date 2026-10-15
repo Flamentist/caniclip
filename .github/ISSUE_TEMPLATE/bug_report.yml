@@ -1,0 +1,33 @@
+name: Bug report
+description: Something doesn't work
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      placeholder: I pressed ⌘⇧8, dragged an area, and the GIF was empty.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "26.3"
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: CaniClip commit
+      placeholder: "Run: git rev-parse --short HEAD"

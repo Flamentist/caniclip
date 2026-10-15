@@ -3,6 +3,8 @@ name = "caniclip-core"
 version = "0.1.0"
 edition = "2021"
 publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+repository = "https://github.com/Flamentist/caniclip"
 
 [lib]
 name = "caniclip_core"
