@@ -111,4 +111,15 @@ final class PreferencesStoreLaunchAtLoginTests: XCTestCase {
         XCTAssertEqual(changes, 0, "no write when the stored value already matches")
         sub.cancel()
     }
+
+    func testFirstLaunchIsConsumedOnce() {
+        let name = "caniclip.tests.firstlaunch.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        let store = PreferencesStore(defaults: defaults, key: "prefs")
+        XCTAssertTrue(store.consumeFirstLaunch())
+        XCTAssertFalse(store.consumeFirstLaunch())
+        let reloaded = PreferencesStore(defaults: defaults, key: "prefs")
+        XCTAssertFalse(reloaded.consumeFirstLaunch(), "the flag persists in the same defaults")
+    }
 }

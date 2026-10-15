@@ -30,6 +30,14 @@ final class PreferencesStore: ObservableObject {
         preferences.launchAtLogin = isEnabled
     }
 
+    /// True exactly once per defaults domain: the first launch of the app.
+    func consumeFirstLaunch() -> Bool {
+        let flagKey = key + ".hasLaunchedBefore"
+        if defaults.bool(forKey: flagKey) { return false }
+        defaults.set(true, forKey: flagKey)
+        return true
+    }
+
     private func save() {
         if let data = try? JSONEncoder().encode(preferences.normalized()) {
             defaults.set(data, forKey: key)

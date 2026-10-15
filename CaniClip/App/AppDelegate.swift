@@ -43,10 +43,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ScreenRecordingPermission.request()
         }
 
-        let defaults = UserDefaults.standard
-        let firstLaunch = !defaults.bool(forKey: "hasLaunchedBefore")
-        defaults.set(true, forKey: "hasLaunchedBefore")
-        if firstLaunch || PreferencesStore.shared.preferences.openHubAtLaunch {
+        // Test runs host the real app; they must not consume the user's first
+        // launch or pop the hub over the test runner.
+        let isRunningTests = NSClassFromString("XCTestCase") != nil
+        if !isRunningTests,
+           PreferencesStore.shared.consumeFirstLaunch() || PreferencesStore.shared.preferences.openHubAtLaunch {
             coordinator.openHub()
         }
     }
