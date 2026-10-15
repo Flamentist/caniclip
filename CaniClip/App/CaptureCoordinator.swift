@@ -17,6 +17,7 @@ final class CaptureCoordinator {
     private var armedFrame: RegionFrameWindow?
     private var startPanel: FloatingPanel?
     private lazy var quickAccess = QuickAccessPresenter(statusItem: statusItem)
+    private lazy var settingsWindow = SettingsWindowController(store: preferences)
 
     init(appState: AppState, preferences: PreferencesStore, statusItem: StatusItemController) {
         self.appState = appState
@@ -186,6 +187,7 @@ final class CaptureCoordinator {
     }
 
     func openSettings() {
-        NSLog("openSettings — implemented in Task 17")
+        settingsWindow.present()
     }
+
 }

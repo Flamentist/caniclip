@@ -53,3 +53,14 @@ struct Preferences: Codable, Equatable {
         maxRecordingSeconds = try c.decodeIfPresent(Int.self, forKey: .maxRecordingSeconds) ?? d.maxRecordingSeconds
     }
 }
+
+extension Preferences {
+    /// Keeps values inside the ranges the encoder and stream accept.
+    func normalized() -> Preferences {
+        var p = self
+        p.gifQuality = min(100, max(1, p.gifQuality))
+        p.gifFPS = min(60, max(1, p.gifFPS))
+        p.maxRecordingSeconds = min(600, max(5, p.maxRecordingSeconds))
+        return p
+    }
+}

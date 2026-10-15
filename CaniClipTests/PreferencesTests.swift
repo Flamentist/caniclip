@@ -44,4 +44,22 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(GifMaxWidth.w800.maxWidthValue, 800)
         XCTAssertNil(GifMaxWidth.original.maxWidthValue)
     }
+
+    func testNormalizedClampsOutOfRangeValues() {
+        var p = Preferences()
+        p.gifQuality = 250
+        p.gifFPS = 0
+        p.maxRecordingSeconds = 1
+        let n = p.normalized()
+        XCTAssertEqual(n.gifQuality, 100)
+        XCTAssertEqual(n.gifFPS, 1)
+        XCTAssertEqual(n.maxRecordingSeconds, 5)
+        p.gifQuality = 0
+        p.gifFPS = 999
+        p.maxRecordingSeconds = 10_000
+        let m = p.normalized()
+        XCTAssertEqual(m.gifQuality, 1)
+        XCTAssertEqual(m.gifFPS, 60)
+        XCTAssertEqual(m.maxRecordingSeconds, 600)
+    }
 }

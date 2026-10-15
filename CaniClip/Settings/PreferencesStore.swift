@@ -17,14 +17,14 @@ final class PreferencesStore: ObservableObject {
         self.key = key
         if let data = defaults.data(forKey: key),
            let decoded = try? JSONDecoder().decode(Preferences.self, from: data) {
-            preferences = decoded
+            preferences = decoded.normalized()
         } else {
             preferences = Preferences()
         }
     }
 
     private func save() {
-        if let data = try? JSONEncoder().encode(preferences) {
+        if let data = try? JSONEncoder().encode(preferences.normalized()) {
             defaults.set(data, forKey: key)
         }
     }
