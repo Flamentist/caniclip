@@ -37,4 +37,18 @@ final class HubRulesTests: XCTestCase {
         _ = r.action(for: .selecting(.areaScreenshot), hubVisible: true)
         XCTAssertEqual(r.action(for: .editing, hubVisible: false), .restore)
     }
+
+    func testClosedHubIsNeverRestored() {
+        var r = HubVisibilityReducer()
+        XCTAssertEqual(r.action(for: .selecting(.areaRecording), hubVisible: true), .hide)
+        r.hubClosed()
+        XCTAssertFalse(r.hiddenForCapture)
+        XCTAssertNil(r.action(for: .idle, hubVisible: false), "a closed hub is never restored")
+    }
+
+    func testHubClosedWithoutHidingIsHarmless() {
+        var r = HubVisibilityReducer()
+        r.hubClosed()
+        XCTAssertNil(r.action(for: .idle, hubVisible: false))
+    }
 }

@@ -15,7 +15,10 @@ final class CaptureCoordinator {
     private var modeObserver: AnyCancellable?
     private lazy var hub: HubWindowController = {
         let controller = HubWindowController(viewModel: HubViewModel(library: library), actions: hubActions())
-        controller.onClose = { NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: 0)) }
+        controller.onClose = { [weak self] in
+            self?.hubVisibility.hubClosed()
+            NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: 0))
+        }
         return controller
     }()
     private var editors: [EditorWindowController] = []
@@ -293,6 +296,10 @@ final class CaptureCoordinator {
     // MARK: Hub
 
     func openHub() {
+        switch appState.mode {
+        case .selecting, .recording, .finishing: return
+        case .idle, .editing: break
+        }
         NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: 1))
         hub.present()
     }

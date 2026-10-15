@@ -19,4 +19,9 @@ struct HubVisibilityReducer {
             return .restore
         }
     }
+
+    /// The user closed the hub while it was hidden for a capture; it must not come back.
+    mutating func hubClosed() {
+        hiddenForCapture = false
+    }
 }
