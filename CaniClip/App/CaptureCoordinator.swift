@@ -16,6 +16,7 @@ final class CaptureCoordinator {
     }()
     private var armedFrame: RegionFrameWindow?
     private var startPanel: FloatingPanel?
+    private lazy var quickAccess = QuickAccessPresenter(statusItem: statusItem)
 
     init(appState: AppState, preferences: PreferencesStore, statusItem: StatusItemController) {
         self.appState = appState
@@ -181,8 +182,7 @@ final class CaptureCoordinator {
     }
 
     func presentRecordingResult(_ output: RecordingController.Output) {
-        // Interim until Task 16 adds the quick-access popover.
-        NSLog("Saved GIF to \(output.url.path) (\(output.summary.frameCount) frames, \(output.summary.fileSizeBytes) bytes)")
+        quickAccess.show(output: output)
     }
 
     func openSettings() {
