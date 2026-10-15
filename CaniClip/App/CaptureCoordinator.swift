@@ -40,11 +40,7 @@ final class CaptureCoordinator {
         self.statusItem = statusItem
         let library = library ?? CaptureLibrary.shared
         self.library = library
-        do {
-            try library.prune(olderThan: preferences.preferences.historyRetentionDays)
-        } catch {
-            reportLibraryFailure(error)
-        }
+        pruneHistory()
         modeObserver = appState.$mode.sink { [weak self] mode in
             guard let self else { return }
             switch self.hubVisibility.action(for: mode, hubVisible: self.hub.isShowing) {
@@ -143,16 +139,28 @@ final class CaptureCoordinator {
 
     private func recordScreenshot(_ image: CGImage) -> UUID? {
         do {
-            return try library.addScreenshot(image).id
+            let id = try library.addScreenshot(image).id
+            pruneHistory()
+            return id
         } catch {
             reportLibraryFailure(error)
             return nil
         }
     }
 
+    /// Retention is enforced at launch and after every addition.
+    private func pruneHistory() {
+        do {
+            try library.prune(olderThan: preferences.preferences.historyRetentionDays)
+        } catch {
+            reportLibraryFailure(error)
+        }
+    }
+
     private func recordGif(url: URL, summary: GifSummary?) {
         do {
             try library.addGif(url: url, summary: summary)
+            pruneHistory()
         } catch {
             reportLibraryFailure(error)
         }

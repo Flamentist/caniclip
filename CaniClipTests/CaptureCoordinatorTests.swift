@@ -100,4 +100,22 @@ final class CaptureCoordinatorTests: XCTestCase {
         XCTAssertEqual(presented[0].0, "History is unavailable")
         XCTAssertTrue(coordinator.library.records.isEmpty)
     }
+
+    func testPruneRunsAfterEachAddition() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("caniclip-coord-prune-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        // 20 days old: survives the launch-time prune (default 30 days) but not a 7-day window.
+        let old = CaptureRecord(id: UUID(), kind: .screenshot, createdAt: Date().addingTimeInterval(-20 * 86_400),
+                                pixelWidth: 4, pixelHeight: 3, fileSizeBytes: 12, savedPath: nil,
+                                hasLibraryAsset: false, durationSeconds: nil, frameCount: nil)
+        try JSONEncoder().encode([old]).write(to: root.appendingPathComponent("index.json"))
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory(), afterCapture: .copyToClipboard, libraryRoot: root)
+        XCTAssertEqual(coordinator.library.records.map(\.id), [old.id], "launch prune keeps it")
+        coordinator.preferences.preferences.historyRetentionDays = 7
+        let image = TestImages.solid(width: 10, height: 6, color: CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1))
+        coordinator.deliverScreenshot(image)
+        XCTAssertEqual(coordinator.library.records.count, 1)
+        XCTAssertNotEqual(coordinator.library.records.first?.id, old.id, "the old record was pruned after the addition")
+    }
 }
