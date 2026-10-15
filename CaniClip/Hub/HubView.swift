@@ -31,6 +31,11 @@ struct HubView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
+            Image("MenuBarIcon")
+                .renderingMode(.template)
+                .resizable()
+                .frame(width: 18, height: 18)
+                .accessibilityHidden(true)
             Text("CaniClip")
                 .font(.title2.weight(.semibold))
             Spacer()

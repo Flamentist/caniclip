@@ -42,6 +42,7 @@ targets:
         # then refuse to load it at runtime.
         OTHER_LDFLAGS: "$(SRCROOT)/core/target/release/libcaniclip_core.a"
         COMBINE_HIDPI_IMAGES: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     preBuildScripts:
       - script: '"$SRCROOT/scripts/build-rust.sh"'
         name: Build Rust Core

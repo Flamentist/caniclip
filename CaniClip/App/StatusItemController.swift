@@ -78,9 +78,15 @@ final class StatusItemController: NSObject {
     }
 
     private func updateIcon() {
-        let symbol = isRecording ? "record.circle.fill" : "camera.viewfinder"
-        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "CaniClip")
-        image?.isTemplate = !isRecording
+        let image: NSImage?
+        if isRecording {
+            image = NSImage(systemSymbolName: "record.circle.fill", accessibilityDescription: "CaniClip")
+        } else {
+            image = NSImage(named: "MenuBarIcon")
+            image?.size = NSSize(width: 18, height: 18)
+            image?.isTemplate = true
+            image?.accessibilityDescription = "CaniClip"
+        }
         statusItem.button?.image = image
         statusItem.button?.contentTintColor = isRecording ? .systemRed : nil
     }
