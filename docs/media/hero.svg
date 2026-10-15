@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-labelledby="t">
+<title id="t">CaniClip: screenshot, annotate and record GIFs on your Mac</title>
+<defs><clipPath id="banner"><rect width="1280" height="640" rx="28"/></clipPath></defs>
+<g clip-path="url(#banner)">
+<rect width="1280" height="640" fill="#FFC83D"/>
+<circle cx="80" cy="610" r="210" fill="#F5B82A"/>
+<circle cx="1230" cy="40" r="170" fill="#F5B82A"/>
+<circle cx="170" cy="300" r="7" fill="#16161A"/>
+<circle cx="205" cy="340" r="4" fill="#16161A"/>
+<circle cx="1110" cy="430" r="6" fill="#16161A"/>
+<circle cx="1150" cy="470" r="4" fill="#16161A"/>
+<circle cx="1080" cy="560" r="8" fill="#16161A"/>
+<g transform="translate(433.36 38) scale(0.42)">
+    <path fill="#16161A" d="M 120 57 L 184 57 A 15 15 0 0 1 199 72 L 199 84 A 15 15 0 0 1 184 99 A 35 35 0 0 0 149 134 L 149 150 A 13 13 0 0 0 162 163 A 13 13 0 0 0 175 150 L 175 134 A 9 9 0 0 1 184 125 A 41 41 0 0 0 225 84 L 225 72 A 41 41 0 0 0 184 31 L 120 31 A 13 13 0 0 0 107 44 A 13 13 0 0 0 120 57 Z"/>
+    <path fill="#16161A" d="M 31 160 L 31 184 A 41 41 0 0 0 72 225 L 104 225 A 13 13 0 0 0 117 212 A 13 13 0 0 0 104 199 L 72 199 A 15 15 0 0 1 57 184 L 57 160 A 13 13 0 0 0 44 147 A 13 13 0 0 0 31 160 Z"/>
+    <path fill="#16161A" d="M 146 196 A 16 16 0 1 0 178 196 A 16 16 0 1 0 146 196 Z"/>
+  <g id="wordmark" transform="translate(269 0)">
+    <path fill="#16161A" d="M 83.65 93.35 A 49 49 0 1 0 83.65 162.65 A 11 11 0 0 0 83.65 147.09 A 11 11 0 0 0 68.09 147.09 A 27 27 0 1 1 68.09 108.91 A 11 11 0 0 0 83.65 108.91 A 11 11 0 0 0 83.65 93.35 Z M 179 91 L 179 165 A 11 11 0 0 0 190 176 A 11 11 0 0 0 201 165 L 201 91 A 11 11 0 0 0 190 80 A 11 11 0 0 0 179 91 Z M 225 91 L 225 165 A 11 11 0 0 0 236 176 A 11 11 0 0 0 247 165 L 247 91 A 11 11 0 0 0 236 80 A 11 11 0 0 0 225 91 Z M 247 128 A 27 27 0 0 1 301 128 L 301 165 A 11 11 0 0 0 312 176 A 11 11 0 0 0 323 165 L 323 128 A 49 49 0 0 0 225 128 A 11 11 0 0 0 236 139 A 11 11 0 0 0 247 128 Z M 347 91 L 347 165 A 11 11 0 0 0 358 176 A 11 11 0 0 0 369 165 L 369 91 A 11 11 0 0 0 358 80 A 11 11 0 0 0 347 91 Z M 344 52 A 14 14 0 1 0 372 52 A 14 14 0 1 0 344 52 Z M 472.65 93.35 A 49 49 0 1 0 472.65 162.65 A 11 11 0 0 0 472.65 147.09 A 11 11 0 0 0 457.09 147.09 A 27 27 0 1 1 457.09 108.91 A 11 11 0 0 0 472.65 108.91 A 11 11 0 0 0 472.65 93.35 Z M 494 59 L 494 165 A 11 11 0 0 0 505 176 A 11 11 0 0 0 516 165 L 516 59 A 11 11 0 0 0 505 48 A 11 11 0 0 0 494 59 Z M 540 91 L 540 165 A 11 11 0 0 0 551 176 A 11 11 0 0 0 562 165 L 562 91 A 11 11 0 0 0 551 80 A 11 11 0 0 0 540 91 Z M 537 52 A 14 14 0 1 0 565 52 A 14 14 0 1 0 537 52 Z M 586 91 L 586 211 A 11 11 0 0 0 597 222 A 11 11 0 0 0 608 211 L 608 91 A 11 11 0 0 0 597 80 A 11 11 0 0 0 586 91 Z"/>
+    <path fill="#16161A" fill-rule="evenodd" d="M 103 128 A 49 49 0 1 0 201 128 A 49 49 0 1 0 103 128 Z M 125 128 A 27 27 0 1 0 179 128 A 27 27 0 1 0 125 128 Z M 586 128 A 49 49 0 1 0 684 128 A 49 49 0 1 0 586 128 Z M 608 128 A 27 27 0 1 0 662 128 A 27 27 0 1 0 608 128 Z"/>
+  </g>
+</g>
+<rect x="250" y="228" width="780" height="470" rx="30" fill="#FFFDF7" stroke="#16161A" stroke-width="8"/>
+<line x1="250" y1="290" x2="1030" y2="290" stroke="#16161A" stroke-width="6"/>
+<circle cx="290" cy="259" r="10" fill="#FF5F57" stroke="#16161A" stroke-width="3"/>
+<circle cx="322" cy="259" r="10" fill="#FEBC2E" stroke="#16161A" stroke-width="3"/>
+<circle cx="354" cy="259" r="10" fill="#28C840" stroke="#16161A" stroke-width="3"/>
+<rect x="314.0" y="494" width="64" height="118" rx="12" fill="#E8E4DA"/>
+<rect x="412.0" y="442" width="64" height="170" rx="12" fill="#E8E4DA"/>
+<rect x="510.0" y="472" width="64" height="140" rx="12" fill="#FFC83D" stroke="#16161A" stroke-width="5"/>
+<rect x="608.0" y="398" width="64" height="214" rx="12" fill="#FFC83D" stroke="#16161A" stroke-width="5"/>
+<rect x="706.0" y="350" width="64" height="262" rx="12" fill="#FFC83D" stroke="#16161A" stroke-width="5"/>
+<rect x="804.0" y="424" width="64" height="188" rx="12" fill="#E8E4DA"/>
+<rect x="902.0" y="376" width="64" height="236" rx="12" fill="#E8E4DA"/>
+<rect x="488.0" y="330" width="304" height="296" rx="4" fill="none" stroke="#16161A" stroke-width="5" stroke-dasharray="18 12" stroke-linecap="round"/>
+<rect x="479.0" y="321" width="18" height="18" rx="4" fill="#FFFDF7" stroke="#16161A" stroke-width="5"/>
+<rect x="783.0" y="321" width="18" height="18" rx="4" fill="#FFFDF7" stroke="#16161A" stroke-width="5"/>
+<rect x="479.0" y="617" width="18" height="18" rx="4" fill="#FFFDF7" stroke="#16161A" stroke-width="5"/>
+<rect x="783.0" y="617" width="18" height="18" rx="4" fill="#FFFDF7" stroke="#16161A" stroke-width="5"/>
+<rect x="502.0" y="278" width="138" height="38" rx="10" fill="#16161A"/>
+<text x="571.0" y="304" text-anchor="middle" font-family="ui-rounded, -apple-system, 'SF Pro Rounded', 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="700" fill="#FFFDF7">680 × 580</text>
+<path d="M 1022.0 352.0 Q 942.0 280.0 810.0 426.0" fill="none" stroke="#FF4D3A" stroke-width="12" stroke-linecap="round"/><path d="M 817.0 396.8 L 810.0 426.0 L 838.3 416.1" fill="none" stroke="#FF4D3A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(1052 250) rotate(8)"><rect width="176" height="112" rx="16" fill="#16161A"/><rect x="12" y="10" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="12" y="90" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="42" y="10" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="42" y="90" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="72" y="10" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="72" y="90" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="102" y="10" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="102" y="90" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="132" y="10" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="132" y="90" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="162" y="10" width="16" height="12" rx="3" fill="#FFC83D"/><rect x="162" y="90" width="16" height="12" rx="3" fill="#FFC83D"/><text x="88.0" y="71.0" text-anchor="middle" font-family="ui-rounded, -apple-system, 'SF Pro Rounded', 'Helvetica Neue', Arial, sans-serif" font-size="42" font-weight="800" fill="#FFFDF7" letter-spacing="2">GIF</text></g>
+<g transform="translate(92 420) rotate(-8)"><rect width="150" height="96" rx="16" fill="#FFFDF7" stroke="#16161A" stroke-width="6"/><rect x="22" y="24" width="106" height="16" rx="8" fill="#FFC83D"/><rect x="22" y="50" width="78" height="10" rx="5" fill="#16161A"/><rect x="22" y="68" width="96" height="10" rx="5" fill="#C9C4B8"/></g>
+</g>
+</svg>

@@ -24,6 +24,8 @@ xcodebuild test -project CaniClip.xcodeproj -scheme CaniClip -destination 'platf
 ./scripts/run.sh
 ```
 
+Changed how the app looks? Regenerate the README images (see **About these images** in the README).
+
 ## 4. Open a pull request
 
 - One topic per PR.

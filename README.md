@@ -1,39 +1,78 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="design/logo/kit/lockups/caniclip-horizontal-mono-ffc83d.svg">
-    <img src="design/logo/kit/lockups/caniclip-horizontal-mono-16161a.svg" alt="CaniClip" width="360">
-  </picture>
+  <img src="docs/media/hero.svg" alt="CaniClip: a selection frame around part of a chart, an annotation arrow and a GIF badge" width="100%">
 </p>
 
 <p align="center"><b>Screenshot, annotate and record GIFs on your Mac.</b><br>One shortcut. No account. Free for non-commercial use.</p>
 
-<p align="center">macOS 15+ · Apple Silicon · Swift + Rust</p>
+<p align="center">
+  <a href="https://github.com/Flamentist/caniclip/actions/workflows/ci.yml"><img src="https://github.com/Flamentist/caniclip/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/macOS-15%2B-16161A" alt="macOS 15+">
+  <img src="https://img.shields.io/badge/Apple%20Silicon-arm64-16161A" alt="Apple Silicon">
+  <a href="LICENSE.md"><img src="https://img.shields.io/badge/licence-PolyForm%20Noncommercial-FFC83D" alt="PolyForm Noncommercial licence"></a>
+</p>
 
 ---
 
-## ⚡ What it does
+## 👀 See it
 
-| | |
-|---|---|
-| 📸 **Capture** | An area or the whole screen |
-| ✏️ **Annotate** | Arrows, boxes, circles, pen, highlighter, text, pixelate |
-| 🎞️ **Record GIFs** | Any area, saved and copied when you stop |
-| 🗂️ **History** | Every capture in one window, ready to reopen or copy |
+<p align="center">
+  <img src="docs/media/demo.gif" alt="Press Shift-Command-7, drag over a chart, draw an arrow, and it's copied" width="640">
+</p>
+
+## 🪄 How it works
+
+| 1. Select | 2. Mark it up | 3. Paste anywhere |
+|:---:|:---:|:---:|
+| <img src="docs/media/step-1-select.png" alt="The screen dims and you drag a selection" width="260"> | <img src="docs/media/step-2-annotate.png" alt="The editor opens and you draw an arrow" width="260"> | <img src="docs/media/step-3-copied.png" alt="It's copied to the clipboard" width="260"> |
+| Press `⇧⌘7`, drag over anything | Arrows, boxes, text, highlighter | Copied. Paste into Slack, Mail, Docs… |
+
+---
+
+## ✏️ Annotate
+
+<img src="docs/media/editor.png" alt="The editor with a highlight, a box, an arrow, a label and pixelated contact details" width="100%">
+
+- **Arrow, box, circle, pen, highlighter, text**
+- **Pixelate** hides emails, phone numbers and passwords
+- **Undo** everything with `⌘Z`
+- **Copy** `⇧⌘C` or **save** `⌘S`
+
+## 🎞️ Record GIFs
+
+<img src="docs/media/recording.png" alt="A red frame around part of a dashboard with a recording timer and a Stop button" width="100%">
+
+- Press `⇧⌘8`, drag an area, click **Start**
+- Press `⇧⌘8` again to stop
+- The GIF is saved **and** copied, ready to drop into an issue or chat
+- Pick frame rate, size and quality in **Settings → Recording**
+
+## 🗂️ Everything in one place
+
+<img src="docs/media/hub.png" alt="The CaniClip window with capture buttons and a grid of recent screenshots and GIFs" width="100%">
+
+- Click the **Dock icon** to open it
+- Every capture lands here, even ones you only copied
+- Hover a card: **Open · Copy · Reveal · Delete**
+- History clears itself after 30 days (change it in **Settings → General**)
+
+---
 
 ## ⌨️ Shortcuts
 
 | Do this | Press |
 |---|---|
-| Capture an area | `⌘⇧7` |
-| Record an area as a GIF | `⌘⇧8` (again to stop) |
-| Capture the full screen | `⌘⇧9` |
-| Open the CaniClip window | Click the Dock icon |
+| Capture an area | `⇧⌘7` |
+| Record an area as a GIF | `⇧⌘8` (again to stop) |
+| Capture the full screen | `⇧⌘9` |
+| Cancel a selection | `Esc` |
+| Square selection | hold `⇧` while dragging |
+| Move the selection | hold `Space` while dragging |
 
-Change them anytime in **Settings → Shortcuts**.
+Change any shortcut in **Settings → Shortcuts**.
 
 ## 🚀 Install
 
-There's no download yet. Build it in 3 steps:
+No download yet. Build it in 3 steps:
 
 **1. Get the tools** (once)
 
@@ -42,7 +81,7 @@ brew install xcodegen
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-You also need **Xcode 26** from the App Store.
+Plus **Xcode 26** from the App Store.
 
 **2. Get the code**
 
@@ -92,7 +131,8 @@ Code: read [CONTRIBUTING.md](CONTRIBUTING.md) first. It's short.
 - `CaniClip/` the app
 - `core/` the Rust library
 - `CaniClipTests/`, `core/tests/` tests
-- `design/logo/` logo files and the script that draws them
+- `design/` the logo, the hero illustration and the scripts that draw them
+- `docs/media/` README images
 - `docs/superpowers/` design notes and plans
 
 **Run the tests**
@@ -100,6 +140,20 @@ Code: read [CONTRIBUTING.md](CONTRIBUTING.md) first. It's short.
 ```bash
 (cd core && cargo test)
 xcodebuild test -project CaniClip.xcodeproj -scheme CaniClip -destination 'platform=macOS,arch=arm64'
+```
+
+</details>
+
+<details>
+<summary><b>About these images</b></summary>
+
+<br>
+
+The screenshots are drawn from the app's real views, filled with made-up sample captures. The demo GIF was encoded by CaniClip's own GIF encoder. Regenerate them all with:
+
+```bash
+TEST_RUNNER_CANICLIP_README_ASSETS="$PWD/docs/media" xcodebuild test -project CaniClip.xcodeproj -scheme CaniClip -destination 'platform=macOS,arch=arm64' -only-testing:CaniClipTests/ReadmeAssetTests
+python3 design/readme/build_hero.py
 ```
 
 </details>
