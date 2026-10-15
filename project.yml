@@ -47,6 +47,12 @@ targets:
       - script: '"$SRCROOT/scripts/build-rust.sh"'
         name: Build Rust Core
         basedOnDependencyAnalysis: false
+    postBuildScripts:
+      # Rebuilding only replaces files inside the bundle, so the .app folder keeps its
+      # old date and macOS (Dock, Finder) keeps showing a cached icon. Touch it.
+      - script: 'touch "${TARGET_BUILD_DIR}/${WRAPPER_NAME}"'
+        name: Refresh App Bundle Date
+        basedOnDependencyAnalysis: false
     dependencies:
       - package: KeyboardShortcuts
       - sdk: ScreenCaptureKit.framework
