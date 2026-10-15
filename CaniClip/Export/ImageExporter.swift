@@ -26,7 +26,11 @@ enum ImageExporter {
     }
 
     static func writePNG(_ image: CGImage, to url: URL) throws {
-        let data = try pngData(from: image)
+        try writePNG(data: try pngData(from: image), to: url)
+    }
+
+    /// Writes already-encoded PNG bytes, so callers that encoded once can reuse them.
+    static func writePNG(data: Data, to url: URL) throws {
         do {
             try data.write(to: url, options: .atomic)
         } catch {

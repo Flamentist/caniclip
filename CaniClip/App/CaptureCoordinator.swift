@@ -111,35 +111,45 @@ final class CaptureCoordinator {
 
     // MARK: Delivery
 
+    /// Delivers first and records afterwards, so history bookkeeping never
+    /// delays the clipboard, the save or the editor.
     func deliverScreenshot(_ image: CGImage) {
-        let recordID = recordScreenshot(image)
         switch preferences.preferences.afterCapture {
         case .openEditor:
-            openEditor(image, recordID: recordID)
+            let controller = openEditor(image)
+            attachRecord(recordScreenshot(image), to: controller)
         case .copyToClipboard:
             ImageExporter.copyToClipboard(image)
             playCaptureSound()
+            recordScreenshot(image)
             appState.transition(to: .idle)
         case .saveToFolder:
+            var png: Data?
             do {
-                let url = try saveScreenshot(image)
-                if let recordID { try? library.markSaved(id: recordID, to: url, annotated: nil) }
+                let encoded = try ImageExporter.pngData(from: image)
+                png = encoded
+                let url = try saveScreenshot(pngData: encoded)
                 playCaptureSound()
+                if let recordID = recordScreenshot(image, pngData: encoded) {
+                    try? library.markSaved(id: recordID, to: url, annotated: nil)
+                }
                 appState.transition(to: .idle)
             } catch {
                 // Never drop the capture: explain, then hand it to the editor,
                 // whose Save As… lets the user pick a writable location.
                 ErrorPresenter.present(error, title: "Could not save screenshot")
-                openEditor(image, recordID: recordID)
+                let controller = openEditor(image)
+                attachRecord(recordScreenshot(image, pngData: png), to: controller)
             }
         }
     }
 
     // MARK: History
 
-    private func recordScreenshot(_ image: CGImage) -> UUID? {
+    @discardableResult
+    private func recordScreenshot(_ image: CGImage, pngData: Data? = nil) -> UUID? {
         do {
-            let id = try library.addScreenshot(image).id
+            let id = try library.addScreenshot(image, pngData: pngData).id
             pruneHistory()
             return id
         } catch {
@@ -175,18 +185,16 @@ final class CaptureCoordinator {
     }
 
     @discardableResult
-    func saveScreenshot(_ image: CGImage) throws -> URL {
+    func saveScreenshot(pngData: Data) throws -> URL {
         let url = FileNamer.uniqueURL(in: preferences.preferences.saveFolderURL, ext: "png")
-        try ImageExporter.writePNG(image, to: url)
+        try ImageExporter.writePNG(data: pngData, to: url)
         return url
     }
 
-    func openEditor(_ image: CGImage, recordID: UUID? = nil) {
+    @discardableResult
+    func openEditor(_ image: CGImage, recordID: UUID? = nil) -> EditorWindowController {
         let controller = EditorWindowController(image: image, preferences: preferences)
-        controller.onSaved = { [weak self] url, annotated in
-            guard let self, let recordID else { return }
-            do { try self.library.markSaved(id: recordID, to: url, annotated: annotated) } catch { self.reportLibraryFailure(error) }
-        }
+        attachRecord(recordID, to: controller)
         controller.onClose = { [weak self, weak controller] in
             guard let self else { return }
             self.editors.removeAll { $0 === controller }
@@ -197,6 +205,16 @@ final class CaptureCoordinator {
         editors.append(controller)
         appState.transition(to: .editing)
         controller.present()
+        return controller
+    }
+
+    /// Links an editor's saves to its history record. Safe to call after the
+    /// editor is already on screen: `onSaved` only fires on a later user save.
+    private func attachRecord(_ recordID: UUID?, to controller: EditorWindowController) {
+        controller.onSaved = { [weak self] url, annotated in
+            guard let self, let recordID else { return }
+            do { try self.library.markSaved(id: recordID, to: url, annotated: annotated) } catch { self.reportLibraryFailure(error) }
+        }
     }
 
     var openEditorCount: Int { editors.count }

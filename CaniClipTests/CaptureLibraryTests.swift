@@ -185,4 +185,14 @@ final class CaptureLibraryTests: XCTestCase {
         let names = try FileManager.default.contentsOfDirectory(atPath: root.path)
         XCTAssertFalse(names.contains { $0.hasPrefix("index.json.corrupt-") })
     }
+
+    func testAddScreenshotUsesSuppliedPNGData() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        let image = red()
+        let png = try ImageExporter.pngData(from: image)
+        let rec = try lib.addScreenshot(image, pngData: png)
+        XCTAssertEqual(try Data(contentsOf: lib.assetURL(for: rec.id)), png)
+        XCTAssertEqual(rec.fileSizeBytes, Int64(png.count))
+        XCTAssertThrowsError(try lib.addScreenshot(image, pngData: Data()))
+    }
 }

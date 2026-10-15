@@ -58,10 +58,11 @@ final class CaptureLibrary: ObservableObject {
     // MARK: Mutations
 
     @discardableResult
-    func addScreenshot(_ image: CGImage) throws -> CaptureRecord {
+    func addScreenshot(_ image: CGImage, pngData: Data? = nil) throws -> CaptureRecord {
         try ensureDirectories()
         let id = UUID()
-        let png = try ImageExporter.pngData(from: image)
+        let png = try pngData ?? ImageExporter.pngData(from: image)
+        guard !png.isEmpty else { throw LibraryError.encodeFailed }
         try png.write(to: assetURL(for: id), options: .atomic)
         try writeThumbnail(of: image, id: id)
         let record = CaptureRecord(id: id, kind: .screenshot, createdAt: Date(),
