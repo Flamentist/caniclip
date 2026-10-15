@@ -29,6 +29,10 @@ struct SettingsView: View {
             Picker("After screenshot", selection: $store.preferences.afterCapture) {
                 ForEach(AfterCaptureAction.allCases) { Text($0.title).tag($0) }
             }
+            Picker("Keep history", selection: $store.preferences.historyRetentionDays) {
+                ForEach(Preferences.retentionOptions, id: \.days) { Text($0.title).tag($0.days) }
+            }
+            Toggle("Open window at launch", isOn: $store.preferences.openHubAtLaunch)
             Toggle("Launch at login", isOn: Binding(
                 get: { store.preferences.launchAtLogin },
                 set: { newValue in

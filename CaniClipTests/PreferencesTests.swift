@@ -64,6 +64,26 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(m.gifFPS, 60)
         XCTAssertEqual(m.maxRecordingSeconds, 600)
     }
+
+    func testHistoryDefaultsAndNormalisation() {
+        let p = Preferences()
+        XCTAssertEqual(p.historyRetentionDays, 30)
+        XCTAssertFalse(p.openHubAtLaunch)
+        var bad = Preferences()
+        bad.historyRetentionDays = 12
+        XCTAssertEqual(bad.normalized().historyRetentionDays, 30)
+        bad.historyRetentionDays = 0
+        XCTAssertEqual(bad.normalized().historyRetentionDays, 0)
+        bad.historyRetentionDays = 90
+        XCTAssertEqual(bad.normalized().historyRetentionDays, 90)
+    }
+
+    func testHistoryKeysDecodeWithDefaultsWhenMissing() throws {
+        let json = #"{"gifFPS": 30}"#.data(using: .utf8)!
+        let p = try JSONDecoder().decode(Preferences.self, from: json)
+        XCTAssertEqual(p.historyRetentionDays, 30)
+        XCTAssertFalse(p.openHubAtLaunch)
+    }
 }
 
 @MainActor

@@ -29,6 +29,12 @@ struct Preferences: Codable, Equatable {
     var gifMaxWidth: GifMaxWidth = .w1200
     var showCursorInRecording: Bool = true
     var maxRecordingSeconds: Int = 60
+    var historyRetentionDays: Int = 30
+    var openHubAtLaunch: Bool = false
+
+    static let retentionOptions: [(days: Int, title: String)] = [
+        (7, "7 days"), (30, "30 days"), (90, "90 days"), (0, "Forever"),
+    ]
 
     static var defaultSaveFolder: URL {
         FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
@@ -51,6 +57,8 @@ struct Preferences: Codable, Equatable {
         gifMaxWidth = try c.decodeIfPresent(GifMaxWidth.self, forKey: .gifMaxWidth) ?? d.gifMaxWidth
         showCursorInRecording = try c.decodeIfPresent(Bool.self, forKey: .showCursorInRecording) ?? d.showCursorInRecording
         maxRecordingSeconds = try c.decodeIfPresent(Int.self, forKey: .maxRecordingSeconds) ?? d.maxRecordingSeconds
+        historyRetentionDays = try c.decodeIfPresent(Int.self, forKey: .historyRetentionDays) ?? d.historyRetentionDays
+        openHubAtLaunch = try c.decodeIfPresent(Bool.self, forKey: .openHubAtLaunch) ?? d.openHubAtLaunch
     }
 }
 
@@ -61,6 +69,9 @@ extension Preferences {
         p.gifQuality = min(100, max(1, p.gifQuality))
         p.gifFPS = min(60, max(1, p.gifFPS))
         p.maxRecordingSeconds = min(600, max(5, p.maxRecordingSeconds))
+        if !Preferences.retentionOptions.contains(where: { $0.days == p.historyRetentionDays }) {
+            p.historyRetentionDays = 30
+        }
         return p
     }
 }
