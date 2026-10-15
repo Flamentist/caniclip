@@ -69,4 +69,11 @@ final class HubRulesTests: XCTestCase {
         // Dock round-trip is covered by the smoke test, not here.
         hub.close()
     }
+
+    func testShowInDockKeepsTheAppRegularWithoutTheHub() {
+        XCTAssertEqual(ActivationPolicyRule.policy(openHubWindows: 0, showInDock: true), .regular)
+        XCTAssertEqual(ActivationPolicyRule.policy(openHubWindows: 1, showInDock: true), .regular)
+        XCTAssertEqual(ActivationPolicyRule.policy(openHubWindows: 0, showInDock: false), .accessory)
+        XCTAssertEqual(ActivationPolicyRule.policy(openHubWindows: 1, showInDock: false), .regular)
+    }
 }

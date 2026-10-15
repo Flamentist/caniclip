@@ -84,6 +84,14 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(p.historyRetentionDays, 30)
         XCTAssertFalse(p.openHubAtLaunch)
     }
+
+    func testShowInDockDefaultsOnAndDecodesWhenMissing() throws {
+        XCTAssertTrue(Preferences().showInDock)
+        let json = #"{"gifFPS": 30}"#.data(using: .utf8)!
+        XCTAssertTrue(try JSONDecoder().decode(Preferences.self, from: json).showInDock)
+        let off = #"{"showInDock": false}"#.data(using: .utf8)!
+        XCTAssertFalse(try JSONDecoder().decode(Preferences.self, from: off).showInDock)
+    }
 }
 
 @MainActor

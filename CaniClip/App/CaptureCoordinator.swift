@@ -13,11 +13,15 @@ final class CaptureCoordinator {
     private var reportedLibraryFailure = false
     private var hubVisibility = HubVisibilityReducer()
     private var modeObserver: AnyCancellable?
+    private var dockObserver: AnyCancellable?
+    private var hubOpen = false
     private lazy var hub: HubWindowController = {
         let controller = HubWindowController(viewModel: HubViewModel(library: library), actions: hubActions())
         controller.onClose = { [weak self] in
-            self?.hubVisibility.hubClosed()
-            NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: 0))
+            guard let self else { return }
+            self.hubVisibility.hubClosed()
+            self.hubOpen = false
+            self.applyActivationPolicy()
         }
         return controller
     }()
@@ -41,6 +45,14 @@ final class CaptureCoordinator {
         let library = library ?? CaptureLibrary.shared
         self.library = library
         pruneHistory()
+        dockObserver = preferences.$preferences
+            .map(\.showInDock)
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] _ in
+                // @Published emits before the value is stored; apply on the next run-loop turn.
+                DispatchQueue.main.async { self?.applyActivationPolicy() }
+            }
         modeObserver = appState.$mode.sink { [weak self] mode in
             guard let self else { return }
             switch self.hubVisibility.action(for: mode, hubVisible: self.hub.isShowing) {
@@ -326,8 +338,15 @@ final class CaptureCoordinator {
         case .selecting, .recording, .finishing: return
         case .idle, .editing: break
         }
-        NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: 1))
+        hubOpen = true
+        applyActivationPolicy()
         hub.present()
+    }
+
+    /// Dock presence follows the "Show in Dock" setting, plus the hub while it is open.
+    func applyActivationPolicy() {
+        NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: hubOpen ? 1 : 0,
+                                                              showInDock: preferences.preferences.showInDock))
     }
 
     private func hubActions() -> HubActions {

@@ -31,6 +31,7 @@ struct Preferences: Codable, Equatable {
     var maxRecordingSeconds: Int = 60
     var historyRetentionDays: Int = 30
     var openHubAtLaunch: Bool = false
+    var showInDock: Bool = true
 
     static let retentionOptions: [(days: Int, title: String)] = [
         (7, "7 days"), (30, "30 days"), (90, "90 days"), (0, "Forever"),
@@ -59,6 +60,7 @@ struct Preferences: Codable, Equatable {
         maxRecordingSeconds = try c.decodeIfPresent(Int.self, forKey: .maxRecordingSeconds) ?? d.maxRecordingSeconds
         historyRetentionDays = try c.decodeIfPresent(Int.self, forKey: .historyRetentionDays) ?? d.historyRetentionDays
         openHubAtLaunch = try c.decodeIfPresent(Bool.self, forKey: .openHubAtLaunch) ?? d.openHubAtLaunch
+        showInDock = try c.decodeIfPresent(Bool.self, forKey: .showInDock) ?? d.showInDock
     }
 }
 

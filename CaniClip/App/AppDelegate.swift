@@ -10,7 +10,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let menuActions = MenuActions()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: 0,
+                                                              showInDock: PreferencesStore.shared.preferences.showInDock))
         MainMenu.install(actions: menuActions)
 
         var coordinatorRef: CaptureCoordinator?

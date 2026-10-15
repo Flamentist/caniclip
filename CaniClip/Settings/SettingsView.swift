@@ -11,7 +11,7 @@ struct SettingsView: View {
             shortcuts.tabItem { Label("Shortcuts", systemImage: "keyboard") }
             recording.tabItem { Label("Recording", systemImage: "record.circle") }
         }
-        .frame(width: 480, height: 320)
+        .frame(width: 480, height: 380)
         .padding(.top, 6)
     }
 
@@ -33,6 +33,8 @@ struct SettingsView: View {
                 ForEach(Preferences.retentionOptions, id: \.days) { Text($0.title).tag($0.days) }
             }
             Toggle("Open window at launch", isOn: $store.preferences.openHubAtLaunch)
+            Toggle("Show in Dock", isOn: $store.preferences.showInDock)
+                .help("When off, CaniClip lives in the menu bar and appears in the Dock only while its window is open.")
             Toggle("Launch at login", isOn: Binding(
                 get: { store.preferences.launchAtLogin },
                 set: { newValue in
