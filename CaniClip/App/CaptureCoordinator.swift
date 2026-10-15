@@ -6,8 +6,10 @@ final class CaptureCoordinator {
     let appState: AppState
     let preferences: PreferencesStore
     let statusItem: StatusItemController
+    let library: CaptureLibrary
     let overlay = SelectionOverlayController()
     let capturer = ScreenCapturer()
+    private var reportedLibraryFailure = false
     private var editors: [EditorWindowController] = []
     private lazy var recorder: RecordingController = {
         let r = RecordingController(preferences: preferences)
@@ -20,10 +22,18 @@ final class CaptureCoordinator {
     private lazy var quickAccess = QuickAccessPresenter(statusItem: statusItem)
     private lazy var settingsWindow = SettingsWindowController(store: preferences)
 
-    init(appState: AppState, preferences: PreferencesStore, statusItem: StatusItemController) {
+    init(appState: AppState, preferences: PreferencesStore, statusItem: StatusItemController,
+         library: CaptureLibrary? = nil) {
         self.appState = appState
         self.preferences = preferences
         self.statusItem = statusItem
+        let library = library ?? CaptureLibrary.shared
+        self.library = library
+        do {
+            try library.prune(olderThan: preferences.preferences.historyRetentionDays)
+        } catch {
+            reportLibraryFailure(error)
+        }
     }
 
     func handle(_ kind: CaptureKind) {
@@ -87,25 +97,54 @@ final class CaptureCoordinator {
     // MARK: Delivery
 
     func deliverScreenshot(_ image: CGImage) {
+        let recordID = recordScreenshot(image)
         switch preferences.preferences.afterCapture {
         case .openEditor:
-            openEditor(image)
+            openEditor(image, recordID: recordID)
         case .copyToClipboard:
             ImageExporter.copyToClipboard(image)
             playCaptureSound()
             appState.transition(to: .idle)
         case .saveToFolder:
             do {
-                _ = try saveScreenshot(image)
+                let url = try saveScreenshot(image)
+                if let recordID { try? library.markSaved(id: recordID, to: url, annotated: nil) }
                 playCaptureSound()
                 appState.transition(to: .idle)
             } catch {
                 // Never drop the capture: explain, then hand it to the editor,
                 // whose Save As… lets the user pick a writable location.
                 ErrorPresenter.present(error, title: "Could not save screenshot")
-                openEditor(image)
+                openEditor(image, recordID: recordID)
             }
         }
+    }
+
+    // MARK: History
+
+    private func recordScreenshot(_ image: CGImage) -> UUID? {
+        do {
+            return try library.addScreenshot(image).id
+        } catch {
+            reportLibraryFailure(error)
+            return nil
+        }
+    }
+
+    private func recordGif(url: URL, summary: GifSummary?) {
+        do {
+            try library.addGif(url: url, summary: summary)
+        } catch {
+            reportLibraryFailure(error)
+        }
+    }
+
+    /// History is a convenience; its failures are shown once and never block a capture.
+    private func reportLibraryFailure(_ error: Error) {
+        NSLog("CaptureLibrary error: %@", error.localizedDescription)
+        guard !reportedLibraryFailure else { return }
+        reportedLibraryFailure = true
+        ErrorPresenter.present(error, title: "History is unavailable")
     }
 
     @discardableResult
@@ -115,8 +154,12 @@ final class CaptureCoordinator {
         return url
     }
 
-    func openEditor(_ image: CGImage) {
+    func openEditor(_ image: CGImage, recordID: UUID? = nil) {
         let controller = EditorWindowController(image: image, preferences: preferences)
+        controller.onSaved = { [weak self] url, annotated in
+            guard let self, let recordID else { return }
+            do { try self.library.markSaved(id: recordID, to: url, annotated: annotated) } catch { self.reportLibraryFailure(error) }
+        }
         controller.onClose = { [weak self, weak controller] in
             guard let self else { return }
             self.editors.removeAll { $0 === controller }
@@ -210,12 +253,14 @@ final class CaptureCoordinator {
         case .success(let output):
             ImageExporter.copyFileToClipboard(output.url)
             NSSound(named: NSSound.Name("Pop"))?.play()
+            recordGif(url: output.url, summary: output.summary)
             presentRecordingResult(output)
         case .failure(let error):
             if case CoreError.OutputUnwritable(_, let tempPath) = error {
                 // The GIF is complete but the chosen folder refused it: show the
                 // user where it is instead of losing a whole recording.
                 let kept = URL(fileURLWithPath: tempPath)
+                recordGif(url: kept, summary: nil)
                 ErrorPresenter.present(error, title: "Could not save the GIF to your folder")
                 ImageExporter.copyFileToClipboard(kept)
                 NSWorkspace.shared.activateFileViewerSelecting([kept])

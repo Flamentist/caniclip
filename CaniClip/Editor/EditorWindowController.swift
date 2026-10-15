@@ -11,6 +11,8 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     let editorDocument: EditorDocument
     private let preferences: PreferencesStore
     var onClose: (() -> Void)?
+    /// Reports every successful save (URL and rasterised image) so history can follow it.
+    var onSaved: ((URL, CGImage) -> Void)?
 
     /// Asks the user what to do with unsaved annotations. Replaceable for tests.
     var unsavedPrompt: () -> UnsavedChoice = {
@@ -79,6 +81,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             ?? FileNamer.uniqueURL(in: preferences.preferences.saveFolderURL, ext: "png")
         try ImageExporter.writePNG(image, to: url)
         editorDocument.markSaved(to: url)
+        onSaved?(url, image)
         return url
     }
 
@@ -103,6 +106,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             do {
                 try ImageExporter.writePNG(image, to: url)
                 self.editorDocument.markSaved(to: url)
+                self.onSaved?(url, image)
             } catch {
                 ErrorPresenter.present(error, title: "Could not save")
             }
