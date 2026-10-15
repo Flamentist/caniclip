@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 
 /// Routes hotkey and menu requests through AppState and runs the capture flows.
 @MainActor
@@ -10,6 +11,13 @@ final class CaptureCoordinator {
     let overlay = SelectionOverlayController()
     let capturer = ScreenCapturer()
     private var reportedLibraryFailure = false
+    private var hubVisibility = HubVisibilityReducer()
+    private var modeObserver: AnyCancellable?
+    private lazy var hub: HubWindowController = {
+        let controller = HubWindowController(viewModel: HubViewModel(library: library), actions: hubActions())
+        controller.onClose = { NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: 0)) }
+        return controller
+    }()
     private var editors: [EditorWindowController] = []
     private lazy var recorder: RecordingController = {
         let r = RecordingController(preferences: preferences)
@@ -33,6 +41,14 @@ final class CaptureCoordinator {
             try library.prune(olderThan: preferences.preferences.historyRetentionDays)
         } catch {
             reportLibraryFailure(error)
+        }
+        modeObserver = appState.$mode.sink { [weak self] mode in
+            guard let self else { return }
+            switch self.hubVisibility.action(for: mode, hubVisible: self.hub.isShowing) {
+            case .hide: self.hub.hideForCapture()
+            case .restore: self.hub.restoreAfterCapture()
+            case nil: break
+            }
         }
     }
 
@@ -272,6 +288,65 @@ final class CaptureCoordinator {
 
     func presentRecordingResult(_ output: RecordingController.Output) {
         quickAccess.show(output: output)
+    }
+
+    // MARK: Hub
+
+    func openHub() {
+        NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: 1))
+        hub.present()
+    }
+
+    private func hubActions() -> HubActions {
+        HubActions(
+            captureArea: { [weak self] in self?.handle(.areaScreenshot) },
+            captureFullScreen: { [weak self] in self?.handle(.fullScreenScreenshot) },
+            recordArea: { [weak self] in self?.handle(.areaRecording) },
+            openSettings: { [weak self] in self?.openSettings() },
+            openSaveFolder: { [weak self] in
+                guard let self else { return }
+                NSWorkspace.shared.open(self.preferences.preferences.saveFolderURL)
+            },
+            openRecord: { [weak self] in self?.openRecord($0) },
+            copyRecord: { [weak self] in self?.copyRecord($0) },
+            revealRecord: { [weak self] in
+                guard let self, let url = self.library.bestFileURL(for: $0) else { return }
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+            },
+            deleteRecord: { [weak self] in self?.deleteRecord($0) }
+        )
+    }
+
+    private func openRecord(_ record: CaptureRecord) {
+        guard let url = library.bestFileURL(for: record) else { return }
+        switch record.kind {
+        case .screenshot:
+            let image = library.image(for: record.id) ?? ThumbnailMaker.firstFrame(ofImageAt: url)
+            guard let image else { return }
+            openEditor(image, recordID: record.id)
+        case .gif:
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    private func copyRecord(_ record: CaptureRecord) {
+        guard let url = library.bestFileURL(for: record) else { return }
+        switch record.kind {
+        case .screenshot:
+            if let image = ThumbnailMaker.firstFrame(ofImageAt: url) { ImageExporter.copyToClipboard(image) }
+        case .gif:
+            ImageExporter.copyFileToClipboard(url)
+        }
+    }
+
+    private func deleteRecord(_ record: CaptureRecord) {
+        let alert = NSAlert()
+        alert.messageText = "Remove this capture from history?"
+        alert.informativeText = "Only the history entry and CaniClip's own copy are removed. Files in your save folder are not affected."
+        alert.addButton(withTitle: "Remove")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        do { try library.delete(id: record.id) } catch { ErrorPresenter.present(error, title: "Could not remove from history") }
     }
 
     func openSettings() {

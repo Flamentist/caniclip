@@ -23,7 +23,7 @@ final class CaptureCoordinatorTests: XCTestCase {
         store.preferences.saveFolderPath = saveFolder
         store.preferences.afterCapture = afterCapture
         let status = StatusItemController(actions: StatusMenuActions(
-            captureArea: {}, captureFullScreen: {}, recordArea: {}, openSettings: {}, quit: {}))
+            captureArea: {}, captureFullScreen: {}, recordArea: {}, openHub: {}, openSettings: {}, quit: {}))
         self.libraryRoot = libraryRoot ?? FileManager.default.temporaryDirectory.appendingPathComponent("caniclip-coord-lib-\(UUID().uuidString)")
         let library = CaptureLibrary(rootURL: self.libraryRoot)
         return CaptureCoordinator(appState: AppState(), preferences: store, statusItem: status, library: library)

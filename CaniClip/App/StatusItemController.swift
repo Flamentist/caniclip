@@ -4,6 +4,7 @@ struct StatusMenuActions {
     var captureArea: () -> Void
     var captureFullScreen: () -> Void
     var recordArea: () -> Void
+    var openHub: () -> Void
     var openSettings: () -> Void
     var quit: () -> Void
 }
@@ -57,6 +58,9 @@ final class StatusItemController: NSObject {
         menu.addItem(makeItem("Capture Full Screen", #selector(captureFullScreen), tag: .captureFullScreen))
         menu.addItem(makeItem("Record Area to GIF", #selector(recordArea), tag: .recordArea))
         menu.addItem(.separator())
+        let hub = makeItem("Open CaniClip", #selector(openHub), tag: nil)
+        hub.keyEquivalent = "0"
+        menu.addItem(hub)
         let settings = makeItem("Settings…", #selector(openSettings), tag: nil)
         settings.keyEquivalent = ","
         menu.addItem(settings)
@@ -94,6 +98,7 @@ final class StatusItemController: NSObject {
     @objc private func captureArea() { actions.captureArea() }
     @objc private func captureFullScreen() { actions.captureFullScreen() }
     @objc private func recordArea() { actions.recordArea() }
+    @objc private func openHub() { actions.openHub() }
     @objc private func openSettings() { actions.openSettings() }
     @objc private func quit() { actions.quit() }
 }

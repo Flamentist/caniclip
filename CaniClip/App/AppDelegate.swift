@@ -7,16 +7,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var coordinator: CaptureCoordinator?
     private var hotkeys: HotkeyController?
     private let appState = AppState()
+    private let menuActions = MenuActions()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        MainMenu.install()
+        MainMenu.install(actions: menuActions)
 
         var coordinatorRef: CaptureCoordinator?
         let status = StatusItemController(actions: StatusMenuActions(
             captureArea: { coordinatorRef?.handle(.areaScreenshot) },
             captureFullScreen: { coordinatorRef?.handle(.fullScreenScreenshot) },
             recordArea: { coordinatorRef?.handle(.areaRecording) },
+            openHub: { coordinatorRef?.openHub() },
             openSettings: { coordinatorRef?.openSettings() },
             quit: { NSApp.terminate(nil) }
         ))
@@ -27,6 +29,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         status.menuItem(for: .captureFullScreen)?.setShortcut(for: .captureFullScreen)
         status.menuItem(for: .recordArea)?.setShortcut(for: .recordArea)
 
+        menuActions.captureArea = { coordinator.handle(.areaScreenshot) }
+        menuActions.captureFullScreen = { coordinator.handle(.fullScreenScreenshot) }
+        menuActions.recordArea = { coordinator.handle(.areaRecording) }
+        menuActions.openHub = { coordinator.openHub() }
+        menuActions.openSettings = { coordinator.openSettings() }
+
         hotkeys = HotkeyController { kind in coordinator.handle(kind) }
         statusItem = status
         self.coordinator = coordinator
@@ -34,6 +42,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !ScreenRecordingPermission.isGranted {
             ScreenRecordingPermission.request()
         }
+
+        let defaults = UserDefaults.standard
+        let firstLaunch = !defaults.bool(forKey: "hasLaunchedBefore")
+        defaults.set(true, forKey: "hasLaunchedBefore")
+        if firstLaunch || PreferencesStore.shared.preferences.openHubAtLaunch {
+            coordinator.openHub()
+        }
+    }
+
+    /// Clicking the Dock icon with no windows reopens the hub.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag { coordinator?.openHub() }
+        return true
     }
 
     /// ⌘Q must honour the editor's unsaved-changes prompt like the close button does.
