@@ -164,6 +164,7 @@ final class CaptureCoordinator {
         let label = SelectionGeometry.sizeLabel(for: globalRect, scale: screen.backingScaleFactor)
         let panel = FloatingPanel(content: RecordStartView(
             sizeLabel: label,
+            store: preferences,
             onStart: { [weak self] in
                 self?.dismissArmedChrome()
                 Task { await self?.startRecording(globalRect: globalRect, screen: screen) }
