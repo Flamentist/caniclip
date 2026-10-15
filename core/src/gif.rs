@@ -13,7 +13,7 @@ use std::thread::JoinHandle;
 use gifski::progress::NoProgress;
 use gifski::{Collector, Repeat, Settings};
 use imgref::ImgVec;
-use rgb::RGBA8;
+use rgb::{FromSlice, RGBA8};
 
 use crate::CoreError;
 
@@ -100,14 +100,15 @@ fn fitted_size(width: u32, height: u32, max_w: Option<u32>, max_h: Option<u32>) 
     )
 }
 
-fn to_rgba(pixels: Vec<u8>, format: PixelFormat) -> Vec<RGBA8> {
-    pixels
-        .chunks_exact(4)
-        .map(|p| match format {
-            PixelFormat::Rgba => RGBA8::new(p[0], p[1], p[2], p[3]),
-            PixelFormat::Bgra => RGBA8::new(p[2], p[1], p[0], p[3]),
-        })
-        .collect()
+/// Views `pixels` as RGBA without a second buffer: BGRA input has its blue and
+/// red bytes swapped in place first. `pixels.len()` must be a multiple of 4.
+fn as_rgba_in_place(pixels: &mut [u8], format: PixelFormat) -> &[RGBA8] {
+    if format == PixelFormat::Bgra {
+        for px in pixels.chunks_exact_mut(4) {
+            px.swap(0, 2);
+        }
+    }
+    pixels.as_rgba()
 }
 
 fn start(settings: &GifSettings, width: u32, height: u32) -> Result<Running, CoreError> {
@@ -188,7 +189,11 @@ impl GifEncoder {
                 ),
             });
         }
-        let img = ImgVec::new(to_rgba(pixels, format), width as usize, height as usize);
+        // gifski's collector takes an owned ImgVec, so one memcpy remains here;
+        // the swizzle itself no longer allocates a separate RGBA buffer.
+        let mut pixels = pixels;
+        let rgba = as_rgba_in_place(&mut pixels, format).to_vec();
+        let img = ImgVec::new(rgba, width as usize, height as usize);
         running.last_frame = Some(img.clone());
         running
             .collector
@@ -278,10 +283,18 @@ mod tests {
     }
 
     #[test]
-    fn bgra_swaps_red_and_blue() {
-        let px = to_rgba(vec![1, 2, 3, 4], PixelFormat::Bgra);
-        assert_eq!(px[0], RGBA8::new(3, 2, 1, 4));
-        let px = to_rgba(vec![1, 2, 3, 4], PixelFormat::Rgba);
-        assert_eq!(px[0], RGBA8::new(1, 2, 3, 4));
+    fn bgra_is_swizzled_in_place_and_viewed_as_rgba() {
+        let mut bytes = vec![1, 2, 3, 4, 10, 20, 30, 40];
+        let px = as_rgba_in_place(&mut bytes, PixelFormat::Bgra);
+        assert_eq!(px, &[RGBA8::new(3, 2, 1, 4), RGBA8::new(30, 20, 10, 40)]);
+        assert_eq!(bytes, vec![3, 2, 1, 4, 30, 20, 10, 40], "swizzle must happen in the caller's buffer");
+    }
+
+    #[test]
+    fn rgba_is_viewed_without_changing_bytes() {
+        let mut bytes = vec![1, 2, 3, 4];
+        let px = as_rgba_in_place(&mut bytes, PixelFormat::Rgba);
+        assert_eq!(px, &[RGBA8::new(1, 2, 3, 4)]);
+        assert_eq!(bytes, vec![1, 2, 3, 4]);
     }
 }
