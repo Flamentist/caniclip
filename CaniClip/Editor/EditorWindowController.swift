@@ -54,7 +54,7 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             save: { [weak self] in self?.saveReportingErrors() },
             saveAs: { [weak self] in self?.saveAs() }
         ))
-        window.contentView = NSHostingView(rootView: root)
+        window.contentView = EditorHostingView(rootView: root)
         window.center()
     }
 
