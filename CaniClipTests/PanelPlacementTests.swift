@@ -24,4 +24,19 @@ final class PanelPlacementTests: XCTestCase {
         let left = PanelPlacement.origin(panelSize: CGSize(width: 220, height: 44), nearRegion: CGRect(x: 0, y: 400, width: 30, height: 30), visibleFrame: visible, gap: 12)
         XCTAssertEqual(left.x, 8)
     }
+
+    func testSitsInsideTheRegionWhenItFillsTheScreen() {
+        // A full-screen region: no room below (the Dock) or above (the menu bar).
+        let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let dockAndMenuBar = CGRect(x: 0, y: 70, width: 1440, height: 805)
+        let o = PanelPlacement.origin(panelSize: CGSize(width: 220, height: 44), nearRegion: screen, visibleFrame: dockAndMenuBar, gap: 12)
+        XCTAssertEqual(o.x, 610)              // 720 - 110
+        XCTAssertEqual(o.y, 70 + 12)          // just above the Dock, inside the region
+    }
+
+    func testSitsInsideATallRegionWithNoRoomAboveOrBelow() {
+        let region = CGRect(x: 400, y: 10, width: 300, height: 860)
+        let o = PanelPlacement.origin(panelSize: CGSize(width: 220, height: 44), nearRegion: region, visibleFrame: visible, gap: 12)
+        XCTAssertEqual(o.y, 10 + 12)
+    }
 }

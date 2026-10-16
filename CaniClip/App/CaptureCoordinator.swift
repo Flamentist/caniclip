@@ -77,7 +77,8 @@ final class CaptureCoordinator {
     func beginSelection(_ kind: CaptureKind) {
         guard ScreenRecordingPermission.ensureGranted() else { return }
         appState.transition(to: .selecting(kind))
-        overlay.begin { [weak self] result in
+        // Recording takes a dragged area, or a click for the whole screen.
+        overlay.begin(clickSelectsScreen: kind == .areaRecording) { [weak self] result in
             guard let self else { return }
             switch result {
             case .cancelled:

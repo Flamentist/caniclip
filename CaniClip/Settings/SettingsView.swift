@@ -59,7 +59,7 @@ struct SettingsView: View {
         Form {
             KeyboardShortcuts.Recorder("Capture area:", name: .captureArea)
             KeyboardShortcuts.Recorder("Capture full screen:", name: .captureFullScreen)
-            KeyboardShortcuts.Recorder("Record area to GIF:", name: .recordArea)
+            KeyboardShortcuts.Recorder("Record GIF:", name: .recordArea)
             Text("Shortcuts work from any app. Press the same recording shortcut again to stop.")
                 .font(.caption)
                 .foregroundStyle(.secondary)

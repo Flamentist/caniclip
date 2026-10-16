@@ -12,11 +12,13 @@ final class SelectionOverlayController {
     private var windows: [SelectionOverlayWindow] = []
     private var completion: ((SelectionResult) -> Void)?
 
-    func begin(completion: @escaping (SelectionResult) -> Void) {
+    /// `clickSelectsScreen`: a click without a drag selects the screen under it.
+    func begin(clickSelectsScreen: Bool = false, completion: @escaping (SelectionResult) -> Void) {
         cancel()
         self.completion = completion
         windows = NSScreen.screens.map { screen in
             let window = SelectionOverlayWindow(screen: screen)
+            window.selectionView.clickSelectsScreen = clickSelectsScreen
             window.selectionView.onFinished = { [weak self, weak window] localRect in
                 guard let self else { return }
                 guard let localRect, let window else { return self.finish(.cancelled) }

@@ -39,7 +39,7 @@ enum MainMenu {
         let full = file.addItem(withTitle: "Capture Full Screen", action: #selector(MenuActions.captureFullScreenAction(_:)), keyEquivalent: "")
         full.target = actions
         full.setShortcut(for: .captureFullScreen)
-        let record = file.addItem(withTitle: "Record Area to GIF", action: #selector(MenuActions.recordAreaAction(_:)), keyEquivalent: "")
+        let record = file.addItem(withTitle: "Record GIF", action: #selector(MenuActions.recordAreaAction(_:)), keyEquivalent: "")
         record.target = actions
         record.setShortcut(for: .recordArea)
         file.addItem(.separator())

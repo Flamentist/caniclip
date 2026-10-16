@@ -60,6 +60,34 @@ final class ReadmeAssetTests: XCTestCase {
         try save(Chrome(content: shot, size: size, title: "Screenshot"), name: "editor")
     }
 
+    /// Layouts to eyeball: the editor at several window widths, so the toolbar never
+    /// truncates, and the record start bar with a 4-digit size. Not used by the README.
+    func testRenderLayoutChecks() throws {
+        guard ProcessInfo.processInfo.environment["CANICLIP_LAYOUT_CHECKS"] != nil else {
+            throw XCTSkip("Set TEST_RUNNER_CANICLIP_LAYOUT_CHECKS=1 to render layout checks")
+        }
+        let defaults = UserDefaults(suiteName: "caniclip.readme.startbar.\(UUID().uuidString)")!
+        let startBar = RecordStartView(sizeLabel: "3420 × 1426", store: PreferencesStore(defaults: defaults, key: "prefs"),
+                                       onStart: {}, onCancel: {})
+            .background(.regularMaterial)
+        try save(Image(nsImage: try snapshot(startBar, size: RecordStartView.size)), name: "start-bar")
+        let overlay = SelectionView(frame: CGRect(x: 0, y: 0, width: 900, height: 500), scale: 2)
+        overlay.clickSelectsScreen = true
+        let rep = try XCTUnwrap(overlay.bitmapImageRepForCachingDisplay(in: overlay.bounds))
+        overlay.cacheDisplay(in: overlay.bounds, to: rep)
+        let dimmed = NSImage(size: overlay.bounds.size)
+        dimmed.addRepresentation(rep)
+        try save(ZStack { Image(decorative: render(DashboardSample(), size: overlay.bounds.size), scale: 2); Image(nsImage: dimmed) },
+                 name: "record-overlay")
+        let image = render(ChatSample(), size: CGSize(width: 800, height: 500))
+        for width in [480.0, 700.0, 900.0, 1100.0] {
+            let doc = EditorDocument(image: image)
+            let size = CGSize(width: width, height: 300)
+            let shot = try snapshot(EditorView(document: doc, actions: EditorActions(copy: {}, save: {}, saveAs: {})), size: size)
+            try save(Chrome(content: shot, size: size, title: "Screenshot"), name: "editor-width-\(Int(width))")
+        }
+    }
+
     func testRenderRecording() throws {
         let model = RecordingHUDModel()
         model.elapsed = 7

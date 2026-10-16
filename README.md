@@ -41,7 +41,7 @@
 
 <img src="docs/media/recording.png" alt="A red frame around part of a dashboard with a recording timer and a Stop button" width="100%">
 
-- Press `⇧⌘8`, drag an area, click **Start**
+- Press `⇧⌘8`, drag an area (or click for the **full screen**), then click **Start**
 - Press `⇧⌘8` again to stop
 - The GIF is saved **and** copied, ready to drop into an issue or chat
 - Pick frame rate, size and quality in **Settings → Recording**
@@ -62,7 +62,7 @@
 | Do this | Press |
 |---|---|
 | Capture an area | `⇧⌘7` |
-| Record an area as a GIF | `⇧⌘8` (again to stop) |
+| Record a GIF of an area or the full screen | `⇧⌘8` (again to stop) |
 | Capture the full screen | `⇧⌘9` |
 | Cancel a selection | `Esc` |
 | Square selection | hold `⇧` while dragging |

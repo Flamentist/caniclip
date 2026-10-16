@@ -79,9 +79,12 @@ final class RecordStartViewTests: XCTestCase {
         XCTAssertEqual(cursorCheckbox(in: host)?.state, .off)
     }
 
-    func testControlsFitInsideThePanel() {
-        let host = host(makeStore())
-        let fitting = host.fittingSize
+    /// Measures the bar's natural one-line size, not a size forced on it: a
+    /// forced size hides overflow by wrapping labels ("Cur-sor", a two-line size).
+    func testControlsFitInsideThePanelOnOneLine() {
+        let view = RecordStartView(sizeLabel: SelectionGeometry.sizeLabel(for: CGRect(x: 0, y: 0, width: 8888, height: 8888), scale: 1),
+                                   store: makeStore(), onStart: {}, onCancel: {})
+        let fitting = NSHostingView(rootView: view).fittingSize
         XCTAssertLessThanOrEqual(fitting.width, RecordStartView.size.width)
         XCTAssertLessThanOrEqual(fitting.height, RecordStartView.size.height)
     }

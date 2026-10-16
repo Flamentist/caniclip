@@ -56,7 +56,7 @@ final class StatusItemController: NSObject {
         menu.addItem(.separator())
         menu.addItem(makeItem("Capture Area", #selector(captureArea), tag: .captureArea))
         menu.addItem(makeItem("Capture Full Screen", #selector(captureFullScreen), tag: .captureFullScreen))
-        menu.addItem(makeItem("Record Area to GIF", #selector(recordArea), tag: .recordArea))
+        menu.addItem(makeItem("Record GIF", #selector(recordArea), tag: .recordArea))
         menu.addItem(.separator())
         let hub = makeItem("Open CaniClip", #selector(openHub), tag: nil)
         hub.keyEquivalent = "0"

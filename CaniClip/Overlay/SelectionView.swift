@@ -4,6 +4,8 @@ import AppKit
 /// Coordinates are window-local (AppKit, bottom-left origin); the owner converts to global.
 final class SelectionView: NSView {
     var onFinished: ((CGRect?) -> Void)?   // nil = cancelled; rect is window-local
+    /// When true, a click without a drag selects this whole screen instead of cancelling.
+    var clickSelectsScreen = false { didSet { needsDisplay = true } }
 
     private let scale: CGFloat
     private var anchor: CGPoint?
@@ -41,7 +43,10 @@ final class SelectionView: NSView {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
         ctx.setFillColor(NSColor.black.withAlphaComponent(0.35).cgColor)
         ctx.fill(bounds)
-        guard let rect = selectionRect else { return }
+        guard let rect = selectionRect else {
+            if clickSelectsScreen { drawHint("Drag to record an area  ·  Click to record the full screen", in: ctx) }
+            return
+        }
         ctx.clear(rect)
         ctx.setStrokeColor(NSColor.white.cgColor)
         ctx.setLineWidth(1)
@@ -67,6 +72,22 @@ final class SelectionView: NSView {
         text.draw(at: CGPoint(x: box.minX + pad, y: box.minY + pad), withAttributes: attrs)
     }
 
+    private func drawHint(_ hint: String, in ctx: CGContext) {
+        let text = hint as NSString
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 15, weight: .medium),
+            .foregroundColor: NSColor.white,
+        ]
+        let size = text.size(withAttributes: attrs)
+        let pad = CGSize(width: 16, height: 10)
+        let box = CGRect(x: bounds.midX - size.width / 2 - pad.width, y: bounds.midY - size.height / 2 - pad.height,
+                         width: size.width + pad.width * 2, height: size.height + pad.height * 2)
+        ctx.setFillColor(NSColor.black.withAlphaComponent(0.7).cgColor)
+        ctx.addPath(CGPath(roundedRect: box, cornerWidth: box.height / 2, cornerHeight: box.height / 2, transform: nil))
+        ctx.fillPath()
+        text.draw(at: CGPoint(x: box.minX + pad.width, y: box.minY + pad.height), withAttributes: attrs)
+    }
+
     override func mouseDown(with event: NSEvent) {
         let p = convert(event.locationInWindow, from: nil)
         anchor = p
@@ -90,7 +111,8 @@ final class SelectionView: NSView {
 
     override func mouseUp(with event: NSEvent) {
         guard let rect = selectionRect else { return finish(nil) }
-        finish(SelectionGeometry.isUsable(rect) ? rect.intersection(bounds) : nil)
+        guard SelectionGeometry.isUsable(rect) else { return finish(clickSelectsScreen ? bounds : nil) }
+        finish(rect.intersection(bounds))
     }
 
     override func keyDown(with event: NSEvent) {
