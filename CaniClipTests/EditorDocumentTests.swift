@@ -69,4 +69,47 @@ final class EditorDocumentTests: XCTestCase {
         XCTAssertEqual(EditorDocument(image: image).pixelateBlockSize, 12)
         XCTAssertEqual(EditorDocument(image: image, styleScale: 2).pixelateBlockSize, 24)
     }
+
+    // MARK: Text size
+
+    private func docWithText() -> (EditorDocument, Annotation) {
+        let doc = makeDoc()
+        let text = Annotation(kind: .text(origin: CGPoint(x: 2, y: 2), string: "A"))
+        doc.setAnnotationsWithoutUndo([text])
+        return (doc, text)
+    }
+
+    func testTextSizeResizesTheSelectedTextAndIsUndoable() {
+        let (doc, text) = docWithText()
+        doc.selectedID = text.id
+        doc.setTextSize(48)
+        XCTAssertEqual(doc.annotations.first?.style.fontSize, 48)
+        XCTAssertEqual(doc.style.fontSize, 48, "new text uses the size too")
+        XCTAssertEqual(doc.undoManager.undoActionName, "Text Size")
+        doc.undoManager.undo()
+        XCTAssertEqual(doc.annotations.first?.style.fontSize, 24)
+    }
+
+    func testTextSizeWithNothingSelectedOnlySetsTheSizeForNewText() {
+        let (doc, _) = docWithText()
+        doc.setTextSize(64)
+        XCTAssertEqual(doc.style.fontSize, 64)
+        XCTAssertEqual(doc.annotations.first?.style.fontSize, 24)
+        XCTAssertFalse(doc.undoManager.canUndo)
+    }
+
+    func testTextControlsShowForTheTextToolOrASelectedText() {
+        let (doc, text) = docWithText()
+        doc.tool = .arrow
+        XCTAssertFalse(doc.isEditingText)
+        doc.tool = .text
+        XCTAssertTrue(doc.isEditingText)
+        doc.tool = .select
+        doc.selectedID = text.id
+        XCTAssertTrue(doc.isEditingText)
+        let box = Annotation(kind: .rect(CGRect(x: 1, y: 1, width: 4, height: 4)))
+        doc.setAnnotationsWithoutUndo([text, box])
+        doc.selectedID = box.id
+        XCTAssertFalse(doc.isEditingText)
+    }
 }

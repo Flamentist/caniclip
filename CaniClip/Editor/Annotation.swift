@@ -90,6 +90,45 @@ struct Annotation: Identifiable, Equatable, Codable {
         }
     }
 
+    enum Corner: CaseIterable {
+        case topLeft, topRight, bottomLeft, bottomRight
+    }
+
+    static let minimumFontSize: CGFloat = 6
+
+    /// A corner of the bounding box, in image pixels (top-left origin).
+    func cornerPoint(_ corner: Corner) -> CGPoint {
+        let b = boundingBox
+        switch corner {
+        case .topLeft: return CGPoint(x: b.minX, y: b.minY)
+        case .topRight: return CGPoint(x: b.maxX, y: b.minY)
+        case .bottomLeft: return CGPoint(x: b.minX, y: b.maxY)
+        case .bottomRight: return CGPoint(x: b.maxX, y: b.maxY)
+        }
+    }
+
+    /// Text scaled so the dragged `corner` follows `point` while the opposite corner
+    /// stays put. The font size follows whichever axis was dragged further, so the
+    /// text keeps its shape. Call it on the annotation as it was when the drag began.
+    func resizingText(corner: Corner, to point: CGPoint) -> Annotation {
+        guard case .text(_, let string) = kind else { return self }
+        let box = boundingBox
+        guard box.width > 0, box.height > 0 else { return self }
+        let towardMaxX = corner == .topRight || corner == .bottomRight
+        let towardMaxY = corner == .bottomLeft || corner == .bottomRight
+        let anchor = CGPoint(x: towardMaxX ? box.minX : box.maxX, y: towardMaxY ? box.minY : box.maxY)
+        let dx = towardMaxX ? point.x - anchor.x : anchor.x - point.x
+        let dy = towardMaxY ? point.y - anchor.y : anchor.y - point.y
+        let ratio = max(dx / box.width, dy / box.height)
+        var copy = self
+        copy.style.fontSize = max(Self.minimumFontSize, style.fontSize * ratio)
+        let size = Self.estimatedTextSize(string, fontSize: copy.style.fontSize)
+        let origin = CGPoint(x: towardMaxX ? anchor.x : anchor.x - size.width,
+                             y: towardMaxY ? anchor.y : anchor.y - size.height)
+        copy.kind = .text(origin: origin, string: string)
+        return copy
+    }
+
     func translated(by d: CGVector) -> Annotation {
         var copy = self
         func move(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x + d.dx, y: p.y + d.dy) }

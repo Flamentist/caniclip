@@ -47,4 +47,44 @@ final class AnnotationTests: XCTestCase {
         let back = try JSONDecoder().decode([Annotation].self, from: data)
         XCTAssertEqual(back, [a])
     }
+
+    // MARK: Text resizing
+
+    private func text(at origin: CGPoint, size: CGFloat) -> Annotation {
+        var style = AnnotationStyle()
+        style.fontSize = size
+        return Annotation(kind: .text(origin: origin, string: "Hello"), style: style)
+    }
+
+    func testDraggingTheBottomRightCornerGrowsTextAndKeepsItsOrigin() {
+        let a = text(at: CGPoint(x: 10, y: 20), size: 20)
+        let box = a.boundingBox
+        let grown = a.resizingText(corner: .bottomRight, to: CGPoint(x: box.minX + box.width * 2, y: box.minY + box.height * 2))
+        XCTAssertEqual(grown.style.fontSize, 40, accuracy: 0.01)
+        XCTAssertEqual(grown.boundingBox.origin.x, 10, accuracy: 0.01)
+        XCTAssertEqual(grown.boundingBox.origin.y, 20, accuracy: 0.01)
+    }
+
+    func testDraggingTheTopLeftCornerKeepsTheBottomRightCornerFixed() {
+        let a = text(at: CGPoint(x: 100, y: 100), size: 40)
+        let box = a.boundingBox
+        let shrunk = a.resizingText(corner: .topLeft, to: CGPoint(x: box.midX, y: box.midY))
+        XCTAssertEqual(shrunk.style.fontSize, 20, accuracy: 0.01)
+        XCTAssertEqual(shrunk.boundingBox.maxX, box.maxX, accuracy: 0.01)
+        XCTAssertEqual(shrunk.boundingBox.maxY, box.maxY, accuracy: 0.01)
+    }
+
+    func testTextNeverShrinksBelowTheMinimumOrFlips() {
+        let a = text(at: CGPoint(x: 50, y: 50), size: 24)
+        let crushed = a.resizingText(corner: .bottomRight, to: CGPoint(x: 0, y: 0))
+        XCTAssertEqual(crushed.style.fontSize, Annotation.minimumFontSize)
+        XCTAssertEqual(crushed.boundingBox.origin.x, 50, accuracy: 0.01)
+    }
+
+    func testCornerPointsAreTheBoundingBoxCorners() {
+        let a = text(at: CGPoint(x: 10, y: 20), size: 20)
+        let box = a.boundingBox
+        XCTAssertEqual(a.cornerPoint(.topLeft), CGPoint(x: box.minX, y: box.minY))
+        XCTAssertEqual(a.cornerPoint(.bottomRight), CGPoint(x: box.maxX, y: box.maxY))
+    }
 }

@@ -13,6 +13,10 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
     private var lastDragPoint: CGPoint?
     private var textField: NSTextField?
     private var textOrigin: CGPoint?
+    /// A text corner being dragged, with the text as it was when the drag began.
+    private var resizing: (corner: Annotation.Corner, original: Annotation)?
+
+    private static let handleSize: CGFloat = 8
 
     init(document: EditorDocument) {
         self.document = document
@@ -69,6 +73,37 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
         default: cursor = .crosshair
         }
         addCursorRect(bounds, cursor: cursor)
+        guard let text = selectedText else { return }
+        for corner in Annotation.Corner.allCases {
+            let c = viewPoint(text.cornerPoint(corner))
+            let r = Self.handleSize
+            addCursorRect(CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2),
+                          cursor: .frameResize(position: Self.cursorPosition(corner), directions: .all))
+        }
+    }
+
+    private static func cursorPosition(_ corner: Annotation.Corner) -> NSCursor.FrameResizePosition {
+        // The view is flipped, so "top" in image pixels is the top on screen too.
+        switch corner {
+        case .topLeft: return .topLeft
+        case .topRight: return .topRight
+        case .bottomLeft: return .bottomLeft
+        case .bottomRight: return .bottomRight
+        }
+    }
+
+    // MARK: Text handles
+
+    /// Text is the only kind with resize handles.
+    private var selectedText: Annotation? { document.selectedText }
+
+    private func handle(at p: CGPoint) -> Annotation.Corner? {
+        guard let text = selectedText else { return nil }
+        let reach = Self.handleSize / scale
+        return Annotation.Corner.allCases.first { corner in
+            let c = text.cornerPoint(corner)
+            return abs(c.x - p.x) <= reach && abs(c.y - p.y) <= reach
+        }
     }
 
     // MARK: Drawing
@@ -90,7 +125,22 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
         var all = document.annotations
         if let draft { all.append(draft) }
         AnnotationRenderer.draw(all, in: ctx) { [document] in document.pixelateService.image(for: $0) }
-        if let id = document.selectedID, let sel = document.annotations.first(where: { $0.id == id }) {
+        if let text = selectedText {
+            // Text gets an outline on its box with a draggable handle at each corner.
+            ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
+            ctx.setLineWidth(1.5 / scale)
+            ctx.setLineDash(phase: 0, lengths: [6 / scale, 4 / scale])
+            ctx.stroke(text.boundingBox)
+            ctx.setLineDash(phase: 0, lengths: [])
+            let side = Self.handleSize / scale
+            for corner in Annotation.Corner.allCases {
+                let c = text.cornerPoint(corner)
+                let square = CGRect(x: c.x - side / 2, y: c.y - side / 2, width: side, height: side)
+                ctx.setFillColor(NSColor.white.cgColor)
+                ctx.fill(square)
+                ctx.stroke(square)
+            }
+        } else if let id = document.selectedID, let sel = document.annotations.first(where: { $0.id == id }) {
             ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
             ctx.setLineWidth(1.5 / scale)
             ctx.setLineDash(phase: 0, lengths: [6 / scale, 4 / scale])
@@ -108,6 +158,11 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
         snapshot = document.annotations
         dragStart = p
         lastDragPoint = p
+        // A handle wins over every tool, so a text can be resized right after typing it.
+        if let corner = handle(at: p), let text = selectedText {
+            resizing = (corner, text)
+            return
+        }
         switch document.tool {
         case .select:
             document.selectedID = document.annotations.last { $0.hitTest(p, tolerance: 6 / scale) }?.id
@@ -132,6 +187,11 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
     override func mouseDragged(with event: NSEvent) {
         let p = imagePoint(event)
         guard let start = dragStart else { return }
+        if let resizing {
+            let resized = resizing.original.resizingText(corner: resizing.corner, to: p)
+            document.setAnnotationsWithoutUndo(document.annotations.map { $0.id == resized.id ? resized : $0 })
+            return
+        }
         if document.tool == .select {
             guard let id = document.selectedID, let last = lastDragPoint else { return }
             let d = CGVector(dx: p.x - last.x, dy: p.y - last.y)
@@ -155,7 +215,15 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
     }
 
     override func mouseUp(with event: NSEvent) {
-        defer { draft = nil; dragStart = nil; lastDragPoint = nil; needsDisplay = true }
+        defer { draft = nil; dragStart = nil; lastDragPoint = nil; resizing = nil; needsDisplay = true }
+        if resizing != nil {
+            if snapshot != document.annotations {
+                let resized = document.annotations
+                document.setAnnotationsWithoutUndo(snapshot)
+                document.replaceAnnotations(resized, actionName: "Resize")
+            }
+            return
+        }
         if document.tool == .select {
             if document.selectedID != nil, snapshot != document.annotations {
                 let moved = document.annotations
@@ -218,11 +286,16 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
     private func commitTextEntry() {
         guard let field = textField, let origin = textOrigin else { return }
         let string = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        field.removeFromSuperview()
+        // Cleared before removal: removing the field ends its editing, which calls
+        // back into this method and would otherwise add the text a second time.
         textField = nil
         textOrigin = nil
+        field.removeFromSuperview()
         if !string.isEmpty {
-            document.add(Annotation(kind: .text(origin: origin, string: string), style: document.style))
+            let text = Annotation(kind: .text(origin: origin, string: string), style: document.style)
+            document.add(text)
+            // Selected straight away, so its resize handles show without switching tools.
+            document.selectedID = text.id
         }
     }
 

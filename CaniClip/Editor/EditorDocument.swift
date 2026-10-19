@@ -50,6 +50,27 @@ final class EditorDocument: ObservableObject {
         annotations = new
     }
 
+    /// Text sizes offered in the toolbar, before `styleScale`.
+    static let textSizes: [CGFloat] = [12, 16, 20, 24, 32, 48, 64, 96]
+
+    /// The selected annotation when it is text.
+    var selectedText: Annotation? {
+        guard let id = selectedID, let a = annotations.first(where: { $0.id == id }), case .text = a.kind else { return nil }
+        return a
+    }
+
+    /// The toolbar shows text size instead of stroke width while this is true.
+    var isEditingText: Bool { tool == .text || selectedText != nil }
+
+    /// Sets the size for new text and resizes the selected text, if any (undoable).
+    func setTextSize(_ size: CGFloat) {
+        style.fontSize = size
+        guard let text = selectedText, text.style.fontSize != size else { return }
+        var resized = text
+        resized.style.fontSize = size
+        replaceAnnotations(annotations.map { $0.id == text.id ? resized : $0 }, actionName: "Text Size")
+    }
+
     func removeSelected() {
         guard let id = selectedID else { return }
         replaceAnnotations(annotations.filter { $0.id != id }, actionName: "Delete")

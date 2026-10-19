@@ -95,14 +95,18 @@ struct EditorView: View {
                 .labelsHidden()
                 .help("Colour")
             swatches(size: 14)
-            Slider(value: $document.style.strokeWidth, in: (1 * document.styleScale)...(14 * document.styleScale),
-                   step: document.styleScale)
-                .frame(width: 90)
-                .help("Stroke width")
-            Text("\(strokeLabel(document.style.strokeWidth))")
-                .monospacedDigit()
-                .frame(width: 18)
-                .foregroundStyle(.secondary)
+            if document.isEditingText {
+                textSizeMenu
+            } else {
+                Slider(value: $document.style.strokeWidth, in: (1 * document.styleScale)...(14 * document.styleScale),
+                       step: document.styleScale)
+                    .frame(width: 90)
+                    .help("Stroke width")
+                Text("\(strokeLabel(document.style.strokeWidth))")
+                    .monospacedDigit()
+                    .frame(width: 18)
+                    .foregroundStyle(.secondary)
+            }
             Spacer(minLength: 12)
             history
             separator
@@ -121,7 +125,7 @@ struct EditorView: View {
             tools
             separator
             colourButton
-            strokeMenu
+            sizeControl
             Spacer(minLength: 12)
             history
             separator
@@ -138,7 +142,7 @@ struct EditorView: View {
             }
             HStack(spacing: 8) {
                 colourButton
-                strokeMenu
+                sizeControl
                 Spacer(minLength: 8)
                 iconActions
             }
@@ -201,6 +205,36 @@ struct EditorView: View {
             }
             .padding(12)
         }
+    }
+
+    /// Text size while typing or with a text selected; stroke width otherwise.
+    @ViewBuilder private var sizeControl: some View {
+        if document.isEditingText { textSizeMenu } else { strokeMenu }
+    }
+
+    private var textSizeMenu: some View {
+        Menu {
+            ForEach(EditorDocument.textSizes.map { $0 * document.styleScale }, id: \.self) { size in
+                Button {
+                    document.setTextSize(size)
+                } label: {
+                    if currentTextSize == size {
+                        Label("\(strokeLabel(size)) pt", systemImage: "checkmark")
+                    } else {
+                        Text("\(strokeLabel(size)) pt")
+                    }
+                }
+            }
+        } label: {
+            Label("\(strokeLabel(currentTextSize))", systemImage: "textformat.size")
+        }
+        .fixedSize()
+        .help("Text size")
+    }
+
+    /// The selected text's size, or the size new text will get.
+    private var currentTextSize: CGFloat {
+        document.selectedText?.style.fontSize ?? document.style.fontSize
     }
 
     private var strokeMenu: some View {
