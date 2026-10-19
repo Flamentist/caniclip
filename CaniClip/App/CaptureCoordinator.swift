@@ -176,7 +176,7 @@ final class CaptureCoordinator {
     /// Retention is enforced at launch and after every addition.
     private func pruneHistory() {
         do {
-            try library.prune(olderThan: preferences.preferences.historyRetentionDays)
+            try library.prune(olderThan: preferences.preferences.historyRetentionDays, keeping: openRecordIDs)
         } catch {
             reportLibraryFailure(error)
         }
@@ -297,6 +297,8 @@ final class CaptureCoordinator {
     }
 
     var openEditorCount: Int { editors.count }
+    /// History entries currently open in an editor; cleanup must not remove them.
+    var openRecordIDs: Set<UUID> { Set(editors.compactMap(\.recordID)) }
     var editorsForTesting: [EditorWindowController] { editors }
 
     /// Asks every editor with unsaved annotations; false if any of them cancels.
@@ -304,6 +306,8 @@ final class CaptureCoordinator {
         for editor in editors where editor.editorDocument.isDirty {
             if !editor.confirmClose() { return false }
         }
+        // Quitting never closes the windows, so keep their edits in history here.
+        editors.forEach(storeEdits)
         return true
     }
 
@@ -462,10 +466,13 @@ final class CaptureCoordinator {
             // The original capture plus its stored edits, still editable. Without the
             // original only the saved (flattened) file is left, so edits can't apply.
             if let original = library.image(for: record.id) {
+                let stored = library.storedEdits(for: record.id)
                 let controller = openEditor(original, recordID: record.id, title: record.title ?? "Screenshot",
                                             styleScale: record.styleScale.map { CGFloat($0) },
-                                            annotations: library.edits(for: record.id))
-                if let path = record.savedPath, FileManager.default.fileExists(atPath: path) {
+                                            annotations: stored ?? [])
+                // Save overwrites the earlier file only when its edits came back with it;
+                // otherwise that file holds annotations we couldn't restore.
+                if stored != nil, let path = record.savedPath, FileManager.default.fileExists(atPath: path) {
                     controller.editorDocument.markSaved(to: URL(fileURLWithPath: path))
                 }
                 return

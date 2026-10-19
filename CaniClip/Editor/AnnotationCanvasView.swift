@@ -28,6 +28,7 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.needsDisplay = true
+                self.styleTextField()
                 self.window?.invalidateCursorRects(for: self)
             }
             .store(in: &cancellables)
@@ -99,7 +100,9 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
 
     private func handle(at p: CGPoint) -> Annotation.Corner? {
         guard let text = selectedText else { return nil }
-        let reach = Self.handleSize / scale
+        // Small text keeps a middle to grab for moving: handles shrink with its box.
+        let box = text.boundingBox
+        let reach = min(Self.handleSize / scale, min(box.width, box.height) / 3)
         return Annotation.Corner.allCases.first { corner in
             let c = text.cornerPoint(corner)
             return abs(c.x - p.x) <= reach && abs(c.y - p.y) <= reach
@@ -253,8 +256,8 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
         case 51, 117: // Delete, Forward Delete
             if document.selectedID != nil { document.removeSelected() } else { super.keyDown(with: event) }
         case 53: // Escape
-            document.selectedID = nil
             commitTextEntry()
+            document.selectedID = nil
         default:
             if let ch = event.charactersIgnoringModifiers?.lowercased().first,
                event.modifierFlags.intersection([.command, .option, .control]).isEmpty,
@@ -268,7 +271,18 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
 
     // MARK: Text entry
 
+    /// Keeps the field being typed in at the current text size and colour.
+    private func styleTextField() {
+        guard let field = textField else { return }
+        let size = document.style.fontSize * scale
+        field.font = NSFont.boldSystemFont(ofSize: size)
+        field.textColor = NSColor(cgColor: document.style.color.cgColor)
+        field.setFrameSize(CGSize(width: max(field.frame.width, 240), height: size * 1.4))
+    }
+
     private func beginTextEntry(at p: CGPoint) {
+        // A new text: the size menu must not keep resizing the previous one.
+        document.selectedID = nil
         let field = NSTextField(frame: CGRect(origin: viewPoint(p), size: CGSize(width: 240, height: document.style.fontSize * scale * 1.4)))
         field.isBordered = false
         field.drawsBackground = false

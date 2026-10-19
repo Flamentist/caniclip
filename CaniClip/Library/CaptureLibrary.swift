@@ -129,13 +129,19 @@ final class CaptureLibrary: ObservableObject {
         } else {
             try JSONEncoder().encode(annotations).write(to: editsURL(for: id), options: .atomic)
         }
-        if let rendered { try writeThumbnail(of: rendered, id: id) }
+        if let rendered {
+            try writeThumbnail(of: rendered, id: id)
+            objectWillChange.send()   // the hub caches thumbnails until the library changes
+        }
     }
 
     /// The capture's stored annotations; empty when there are none or they can't be read.
-    func edits(for id: UUID) -> [Annotation] {
-        guard let data = try? Data(contentsOf: editsURL(for: id)) else { return [] }
-        return (try? JSONDecoder().decode([Annotation].self, from: data)) ?? []
+    func edits(for id: UUID) -> [Annotation] { storedEdits(for: id) ?? [] }
+
+    /// Stored annotations, or nil when none were ever stored (or they can't be read).
+    func storedEdits(for id: UUID) -> [Annotation]? {
+        guard let data = try? Data(contentsOf: editsURL(for: id)) else { return nil }
+        return try? JSONDecoder().decode([Annotation].self, from: data)
     }
 
     func delete(id: UUID) throws {
@@ -145,13 +151,15 @@ final class CaptureLibrary: ObservableObject {
 
     /// Removes records older than `days` (0 = keep forever) and their library
     /// files, and sweeps assets or thumbnails that belong to no record.
-    func prune(olderThan days: Int, now: Date = Date()) throws {
+    /// `keeping`: records spared whatever their age, such as ones open in an editor.
+    func prune(olderThan days: Int, now: Date = Date(), keeping: Set<UUID> = []) throws {
         sweepOrphanedFiles()
         guard days > 0 else { return }
         let cutoff = now.addingTimeInterval(-Double(days) * 86_400)
-        let stale = records.filter { $0.createdAt < cutoff }
+        let stale = records.filter { $0.createdAt < cutoff && !keeping.contains($0.id) }
         guard !stale.isEmpty else { return }
-        try commit(records.filter { $0.createdAt >= cutoff })
+        let staleIDs = Set(stale.map(\.id))
+        try commit(records.filter { !staleIDs.contains($0.id) })
         for record in stale { removeFiles(for: record.id) }
     }
 

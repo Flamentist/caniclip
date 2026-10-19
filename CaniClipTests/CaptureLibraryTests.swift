@@ -297,4 +297,24 @@ final class CaptureLibraryTests: XCTestCase {
         XCTAssertEqual(reloaded.title, "photo.jpg")
         XCTAssertEqual(reloaded.styleScale, 3)
     }
+
+    func testSavingEditsTellsTheHubToRedrawItsThumbnail() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        let rec = try lib.addScreenshot(red())
+        var changes = 0
+        let watch = lib.objectWillChange.sink { changes += 1 }
+        defer { watch.cancel() }
+        try lib.saveEdits([arrow], for: rec.id, rendered: red())
+        XCTAssertGreaterThan(changes, 0)
+    }
+
+    func testStoredEditsDistinguishesNoneFromEmpty() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        let rec = try lib.addScreenshot(red())
+        XCTAssertNil(lib.storedEdits(for: rec.id))
+        try lib.saveEdits([arrow], for: rec.id, rendered: nil)
+        XCTAssertEqual(lib.storedEdits(for: rec.id), [arrow])
+        try Data("garbage".utf8).write(to: lib.editsURL(for: rec.id))
+        XCTAssertNil(lib.storedEdits(for: rec.id), "unreadable edits count as none")
+    }
 }

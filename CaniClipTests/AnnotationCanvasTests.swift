@@ -82,4 +82,43 @@ final class AnnotationCanvasTests: XCTestCase {
         XCTAssertEqual(doc.annotations.count, 1, "Return must add the text once")
         XCTAssertEqual(doc.selectedID, doc.annotations.first?.id)
     }
+
+    func testStartingANewTextDeselectsThePreviousOne() throws {
+        let (doc, _) = docWithText(tool: .text)
+        let (canvas, window) = makeCanvas(doc)
+        canvas.mouseDown(with: mouse(.leftMouseDown, at: CGPoint(x: 250, y: 200), in: window))
+        XCTAssertNil(doc.selectedID, "the size menu must not resize the previous text")
+        let field = try XCTUnwrap(canvas.subviews.compactMap { $0 as? NSTextField }.first)
+        doc.setTextSize(48)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(field.font?.pointSize ?? 0, 48, accuracy: 0.5, "the field being typed in follows the size")
+        XCTAssertEqual(doc.annotations.first?.style.fontSize, 20)
+    }
+
+    func testSmallTextCanStillBeMovedFromItsMiddle() {
+        let doc = EditorDocument(image: TestImages.solid(width: 400, height: 300, color: CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)))
+        var style = AnnotationStyle()
+        style.fontSize = 8
+        let tiny = Annotation(kind: .text(origin: CGPoint(x: 100, y: 100), string: "i"), style: style)
+        doc.setAnnotationsWithoutUndo([tiny])
+        doc.selectedID = tiny.id
+        doc.tool = .select
+        let (canvas, window) = makeCanvas(doc)
+        let mid = CGPoint(x: tiny.boundingBox.midX, y: tiny.boundingBox.midY)
+        drag(canvas, window, from: mid, to: CGPoint(x: mid.x + 20, y: mid.y))
+        XCTAssertEqual(doc.annotations.first?.style.fontSize, 8, "a click in the middle moves, it doesn't resize")
+        XCTAssertEqual(doc.annotations.first?.boundingBox.minX ?? 0, 120, accuracy: 0.5)
+    }
+
+    func testEscapeLeavesNothingSelected() throws {
+        let doc = EditorDocument(image: TestImages.solid(width: 400, height: 300, color: CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)))
+        doc.tool = .text
+        let (canvas, window) = makeCanvas(doc)
+        canvas.mouseDown(with: mouse(.leftMouseDown, at: CGPoint(x: 40, y: 40), in: window))
+        try XCTUnwrap(canvas.subviews.compactMap { $0 as? NSTextField }.first).stringValue = "Note"
+        let escape = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber,
+                                      context: nil, characters: "\u{1b}", charactersIgnoringModifiers: "\u{1b}", isARepeat: false, keyCode: 53)!
+        canvas.keyDown(with: escape)
+        XCTAssertNil(doc.selectedID)
+    }
 }

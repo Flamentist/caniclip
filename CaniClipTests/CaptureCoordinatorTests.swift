@@ -248,4 +248,51 @@ final class CaptureCoordinatorTests: XCTestCase {
         XCTAssertEqual(reopened.editorDocument.lastSavedURL, saved)
         coordinator.closeAllEditorsForTesting()
     }
+
+    // MARK: Review fixes
+
+    func testQuittingWithDontSaveStillKeepsTheEdits() throws {
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory(), afterCapture: .openEditor)
+        coordinator.deliverScreenshot(TestImages.solid(width: 20, height: 12, color: CGColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)))
+        let editor = try XCTUnwrap(coordinator.editorsForTesting.first)
+        editor.editorDocument.add(box)
+        editor.unsavedPrompt = { .discard }
+        XCTAssertTrue(coordinator.editorsAllowTermination())
+        let id = try XCTUnwrap(coordinator.library.records.first?.id)
+        XCTAssertEqual(coordinator.library.edits(for: id), [box])
+        coordinator.closeAllEditorsForTesting()
+    }
+
+    /// Saved before edits were kept: the saved file holds annotations we can't restore,
+    /// so Save must not overwrite it with the bare original.
+    func testReopeningASavedCaptureWithoutStoredEditsSavesANewFile() throws {
+        let folder = try tempFolder()
+        let coordinator = makeCoordinator(saveFolder: folder.path, afterCapture: .openEditor)
+        coordinator.deliverScreenshot(TestImages.solid(width: 20, height: 12, color: CGColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)))
+        let editor = try XCTUnwrap(coordinator.editorsForTesting.first)
+        editor.editorDocument.add(box)
+        _ = try editor.save()
+        coordinator.closeAllEditorsForTesting()   // closes without storing edits, like an older version
+        let record = try XCTUnwrap(coordinator.library.records.first)
+        try? FileManager.default.removeItem(at: coordinator.library.editsURL(for: record.id))
+        coordinator.openRecord(record)
+        XCTAssertNil(try XCTUnwrap(coordinator.editorsForTesting.first).editorDocument.lastSavedURL)
+        coordinator.closeAllEditorsForTesting()
+    }
+
+    func testHistoryCleanupSparesCapturesWithAnOpenEditor() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("caniclip-coord-spare-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory(), afterCapture: .openEditor, libraryRoot: root)
+        coordinator.deliverScreenshot(TestImages.solid(width: 20, height: 12, color: CGColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)))
+        let open = try XCTUnwrap(coordinator.library.records.first)
+        // Retention so short that the next capture's cleanup would remove the open one.
+        try coordinator.library.prune(olderThan: 1, now: Date().addingTimeInterval(2 * 86_400), keeping: [open.id])
+        XCTAssertTrue(coordinator.library.records.contains { $0.id == open.id })
+        try coordinator.library.prune(olderThan: 1, now: Date().addingTimeInterval(2 * 86_400), keeping: [])
+        XCTAssertFalse(coordinator.library.records.contains { $0.id == open.id })
+        XCTAssertEqual(coordinator.openRecordIDs, [open.id])
+        coordinator.closeAllEditorsForTesting()
+    }
 }
