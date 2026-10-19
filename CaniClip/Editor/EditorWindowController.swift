@@ -29,21 +29,31 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
-    init(image: CGImage, preferences: PreferencesStore) {
-        self.editorDocument = EditorDocument(image: image)
-        self.preferences = preferences
-
-        let screenFrame = NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
-        let scale = NSScreen.main?.backingScaleFactor ?? 2
-        let maxSize = CGSize(width: screenFrame.width * 0.8, height: screenFrame.height * 0.8 - 44)
-        let natural = CGSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
+    /// Window content size for an image, and how much the image is shrunk to fit
+    /// 80% of the screen. Images are shown like screenshots: pixels / screen scale.
+    static func layout(imagePixels: CGSize, scale: CGFloat, screen: CGRect) -> (content: CGSize, fit: CGFloat) {
+        let maxSize = CGSize(width: screen.width * 0.8, height: screen.height * 0.8 - 44)
+        let natural = CGSize(width: imagePixels.width / scale, height: imagePixels.height / scale)
         let fit = min(1, maxSize.width / natural.width, maxSize.height / natural.height)
         let content = CGSize(width: max(480, natural.width * fit), height: max(320, natural.height * fit + 44))
+        return (content, fit)
+    }
 
-        let window = NSWindow(contentRect: CGRect(origin: .zero, size: content),
+    /// `scalesStyleToFit`: imported images get annotation sizes scaled to the fit;
+    /// screenshots keep the defaults.
+    init(image: CGImage, preferences: PreferencesStore, title: String = "Screenshot", scalesStyleToFit: Bool = false) {
+        let screenFrame = NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let scale = NSScreen.main?.backingScaleFactor ?? 2
+        let layout = Self.layout(imagePixels: CGSize(width: image.width, height: image.height), scale: scale, screen: screenFrame)
+        // A whole-number scale keeps stroke widths on the toolbar's menu steps.
+        let styleScale = scalesStyleToFit ? max(1, (1 / layout.fit).rounded()) : 1
+        self.editorDocument = EditorDocument(image: image, styleScale: styleScale)
+        self.preferences = preferences
+
+        let window = NSWindow(contentRect: CGRect(origin: .zero, size: layout.content),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered, defer: false)
-        window.title = "Screenshot"
+        window.title = title
         window.isReleasedWhenClosed = false
         window.minSize = CGSize(width: 480, height: 320)
         super.init(window: window)

@@ -6,6 +6,9 @@ final class EditorDocument: ObservableObject {
     let image: CGImage
     let undoManager = UndoManager()
     let pixelateService: PixelateService
+    /// Multiplies the default stroke width and text size, so a large image shown
+    /// shrunk in its window still gets annotations that look normal on screen.
+    let styleScale: CGFloat
 
     @Published private(set) var annotations: [Annotation] = []
     @Published var selectedID: UUID?
@@ -14,9 +17,12 @@ final class EditorDocument: ObservableObject {
     @Published private(set) var isDirty = false
     private(set) var lastSavedURL: URL?
 
-    init(image: CGImage) {
+    init(image: CGImage, styleScale: CGFloat = 1) {
         self.image = image
         self.pixelateService = PixelateService(base: image)
+        self.styleScale = styleScale
+        style.strokeWidth = (style.strokeWidth * styleScale).rounded()
+        style.fontSize = (style.fontSize * styleScale).rounded()
         undoManager.levelsOfUndo = 100
     }
 

@@ -95,10 +95,11 @@ struct EditorView: View {
                 .labelsHidden()
                 .help("Colour")
             swatches(size: 14)
-            Slider(value: $document.style.strokeWidth, in: 1...14, step: 1)
+            Slider(value: $document.style.strokeWidth, in: (1 * document.styleScale)...(14 * document.styleScale),
+                   step: document.styleScale)
                 .frame(width: 90)
                 .help("Stroke width")
-            Text("\(Int(document.style.strokeWidth))")
+            Text("\(strokeLabel(document.style.strokeWidth))")
                 .monospacedDigit()
                 .frame(width: 18)
                 .foregroundStyle(.secondary)
@@ -204,22 +205,27 @@ struct EditorView: View {
 
     private var strokeMenu: some View {
         Menu {
-            ForEach(Self.strokeWidths, id: \.self) { width in
+            ForEach(Self.strokeWidths.map { $0 * document.styleScale }, id: \.self) { width in
                 Button {
                     document.style.strokeWidth = width
                 } label: {
                     if document.style.strokeWidth == width {
-                        Label("\(Int(width)) pt", systemImage: "checkmark")
+                        Label("\(strokeLabel(width)) pt", systemImage: "checkmark")
                     } else {
-                        Text("\(Int(width)) pt")
+                        Text("\(strokeLabel(width)) pt")
                     }
                 }
             }
         } label: {
-            Label("\(Int(document.style.strokeWidth))", systemImage: "lineweight")
+            Label("\(strokeLabel(document.style.strokeWidth))", systemImage: "lineweight")
         }
         .fixedSize()
         .help("Stroke width")
+    }
+
+    /// Stroke widths read the same on every image, whatever its style scale.
+    private func strokeLabel(_ width: CGFloat) -> Int {
+        Int((width / document.styleScale).rounded())
     }
 
     private var history: some View {
