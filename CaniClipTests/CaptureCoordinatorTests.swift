@@ -119,4 +119,72 @@ final class CaptureCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.library.records.count, 1)
         XCTAssertNotEqual(coordinator.library.records.first?.id, old.id, "the old record was pruned after the addition")
     }
+
+    // MARK: Import
+
+    private func writePNG(_ name: String, in folder: URL) throws -> URL {
+        let url = folder.appendingPathComponent(name)
+        try ImageExporter.writePNG(TestImages.solid(width: 24, height: 12, color: CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1)), to: url)
+        return url
+    }
+
+    private func tempFolder() throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("caniclip-coord-import-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        return url
+    }
+
+    func testOpeningAFileOpensATitledEditorAndRecordsHistory() throws {
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory(), afterCapture: .copyToClipboard)
+        coordinator.openFiles([try writePNG("diagram.png", in: try tempFolder())])
+        XCTAssertEqual(coordinator.openEditorCount, 1, "imports open the editor whatever After capture says")
+        XCTAssertEqual(coordinator.editorsForTesting.first?.window?.title, "diagram.png")
+        XCTAssertEqual(coordinator.library.records.count, 1)
+        XCTAssertEqual(coordinator.appState.mode, .editing)
+        XCTAssertTrue(presented.isEmpty)
+        coordinator.closeAllEditorsForTesting()
+    }
+
+    func testPastingWithNoImageReportsAndOpensNothing() {
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory())
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("caniclip.tests.\(UUID().uuidString)"))
+        defer { pasteboard.releaseGlobally() }
+        pasteboard.clearContents()
+        pasteboard.setString("hello", forType: .string)
+        coordinator.pasteImage(from: pasteboard)
+        XCTAssertEqual(presented.map(\.0), ["Could not paste"])
+        XCTAssertEqual(presented.map(\.1), ["There's no image on the clipboard"])
+        XCTAssertEqual(coordinator.openEditorCount, 0)
+        XCTAssertEqual(coordinator.appState.mode, .idle)
+    }
+
+    func testOpeningANonImageFileReports() throws {
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory())
+        let text = try tempFolder().appendingPathComponent("notes.txt")
+        try Data("hi".utf8).write(to: text)
+        coordinator.openFiles([text])
+        XCTAssertEqual(presented.map(\.0), ["Could not open"])
+        XCTAssertEqual(coordinator.openEditorCount, 0)
+    }
+
+    func testOnlyTheFirstOfSeveralFilesOpens() throws {
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory())
+        let folder = try tempFolder()
+        coordinator.openFiles([try writePNG("one.png", in: folder), try writePNG("two.png", in: folder)])
+        XCTAssertEqual(coordinator.openEditorCount, 1)
+        XCTAssertEqual(coordinator.editorsForTesting.first?.window?.title, "one.png")
+        coordinator.closeAllEditorsForTesting()
+    }
+
+    func testImportDuringARecordingLeavesTheRecordingInCharge() throws {
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory())
+        coordinator.appState.transition(to: .recording)
+        coordinator.openFiles([try writePNG("mid.png", in: try tempFolder())])
+        XCTAssertEqual(coordinator.openEditorCount, 1)
+        XCTAssertEqual(coordinator.appState.mode, .recording)
+        XCTAssertEqual(coordinator.appState.action(for: .areaRecording), .stopRecording)
+        coordinator.editorsForTesting[0].close()
+        XCTAssertEqual(coordinator.appState.mode, .recording, "closing the editor must not end the recording state")
+    }
 }

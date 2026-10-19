@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 import Combine
 
 /// Routes hotkey and menu requests through AppState and runs the capture flows.
@@ -205,8 +206,10 @@ final class CaptureCoordinator {
     }
 
     @discardableResult
-    func openEditor(_ image: CGImage, recordID: UUID? = nil) -> EditorWindowController {
-        let controller = EditorWindowController(image: image, preferences: preferences)
+    func openEditor(_ image: CGImage, recordID: UUID? = nil, title: String = "Screenshot",
+                    scalesStyleToFit: Bool = false) -> EditorWindowController {
+        let controller = EditorWindowController(image: image, preferences: preferences, title: title,
+                                                scalesStyleToFit: scalesStyleToFit)
         attachRecord(recordID, to: controller)
         controller.onClose = { [weak self, weak controller] in
             guard let self else { return }
@@ -216,9 +219,55 @@ final class CaptureCoordinator {
             }
         }
         editors.append(controller)
-        appState.transition(to: .editing)
+        // An editor opened mid-capture (say, a file dropped on the Dock while
+        // recording) must not take over: the record shortcut still has to stop it.
+        if appState.mode == .idle || appState.mode == .editing {
+            appState.transition(to: .editing)
+        }
         controller.present()
         return controller
+    }
+
+    // MARK: Import
+
+    /// Opens an image from outside CaniClip in the editor and adds it to history.
+    func openImported(_ imported: ImportedImage) {
+        let controller = openEditor(imported.image, title: imported.title, scalesStyleToFit: true)
+        attachRecord(recordScreenshot(imported.image), to: controller)
+    }
+
+    /// Opens the first of `urls`; the rest are ignored.
+    func openFiles(_ urls: [URL]) {
+        guard let url = urls.first else { return }
+        do {
+            guard ImageImporter.isImageFile(url) else { throw ImportError.unreadableFile }
+            openImported(try ImageImporter.image(contentsOf: url))
+        } catch {
+            reportImportFailure(error, title: "Could not open")
+        }
+    }
+
+    func pasteImage(from pasteboard: NSPasteboard = .general) {
+        do {
+            openImported(try ImageImporter.image(from: pasteboard))
+        } catch {
+            reportImportFailure(error, title: "Could not paste")
+        }
+    }
+
+    func showOpenPanel() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.image]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK else { return }
+        openFiles(panel.urls)
+    }
+
+    private func reportImportFailure(_ error: Error, title: String) {
+        NSSound.beep()
+        ErrorPresenter.present(error, title: title)
     }
 
     /// Links an editor's saves to its history record. Safe to call after the
