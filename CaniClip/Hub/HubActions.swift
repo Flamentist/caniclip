@@ -10,4 +10,8 @@ struct HubActions {
     var copyRecord: (CaptureRecord) -> Void
     var revealRecord: (CaptureRecord) -> Void
     var deleteRecord: (CaptureRecord) -> Void
+    var openFile: () -> Void = {}
+    var pasteImage: () -> Void = {}
+    var openURLs: ([URL]) -> Void = { _ in }
+    var openImageData: (Data) -> Void = { _ in }
 }

@@ -3,15 +3,41 @@ import KeyboardShortcuts
 
 /// Compact capture action: a tinted icon square beside the title and its shortcut.
 struct ActionTile: View {
+    private enum Shortcut {
+        case global(KeyboardShortcuts.Name)
+        case fixed(String)
+    }
+
     let title: String
     let symbol: String
-    let shortcutName: KeyboardShortcuts.Name
+    private let shortcut: Shortcut
     let tint: Color
     let action: () -> Void
     @State private var hovering = false
 
+    /// A tile whose shortcut is a user-configurable global hotkey.
+    init(title: String, symbol: String, shortcutName: KeyboardShortcuts.Name, tint: Color, action: @escaping () -> Void) {
+        self.init(title: title, symbol: symbol, shortcut: .global(shortcutName), tint: tint, action: action)
+    }
+
+    /// A tile with a fixed in-app shortcut, such as ⌘O.
+    init(title: String, symbol: String, shortcutText: String, tint: Color, action: @escaping () -> Void) {
+        self.init(title: title, symbol: symbol, shortcut: .fixed(shortcutText), tint: tint, action: action)
+    }
+
+    private init(title: String, symbol: String, shortcut: Shortcut, tint: Color, action: @escaping () -> Void) {
+        self.title = title
+        self.symbol = symbol
+        self.shortcut = shortcut
+        self.tint = tint
+        self.action = action
+    }
+
     private var shortcutText: String {
-        KeyboardShortcuts.getShortcut(for: shortcutName)?.description ?? "No shortcut"
+        switch shortcut {
+        case .global(let name): return KeyboardShortcuts.getShortcut(for: name)?.description ?? "No shortcut"
+        case .fixed(let text): return text
+        }
     }
 
     var body: some View {

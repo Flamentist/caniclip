@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotkeys: HotkeyController?
     private let appState = AppState()
     private let menuActions = MenuActions()
+    /// Files opened from Finder or the Dock before launch finished.
+    private var pendingOpenURLs: [URL] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(ActivationPolicyRule.policy(openHubWindows: 0,
@@ -21,7 +23,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             recordArea: { coordinatorRef?.handle(.areaRecording) },
             openHub: { coordinatorRef?.openHub() },
             openSettings: { coordinatorRef?.openSettings() },
-            quit: { NSApp.terminate(nil) }
+            quit: { NSApp.terminate(nil) },
+            openImage: { coordinatorRef?.showOpenPanel() },
+            pasteImage: { coordinatorRef?.pasteImage() }
         ))
         let coordinator = CaptureCoordinator(appState: appState, preferences: .shared, statusItem: status)
         coordinatorRef = coordinator
@@ -35,10 +39,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menuActions.recordArea = { coordinator.handle(.areaRecording) }
         menuActions.openHub = { coordinator.openHub() }
         menuActions.openSettings = { coordinator.openSettings() }
+        menuActions.openFile = { coordinator.showOpenPanel() }
+        menuActions.pasteImage = { coordinator.pasteImage() }
 
         hotkeys = HotkeyController { kind in coordinator.handle(kind) }
         statusItem = status
         self.coordinator = coordinator
+        if !pendingOpenURLs.isEmpty {
+            coordinator.openFiles(pendingOpenURLs)
+            pendingOpenURLs = []
+        }
 
         if !ScreenRecordingPermission.isGranted {
             ScreenRecordingPermission.request()
@@ -51,6 +61,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
            PreferencesStore.shared.consumeFirstLaunch() || PreferencesStore.shared.preferences.openHubAtLaunch {
             coordinator.openHub()
         }
+    }
+
+    /// Images dropped on the Dock icon or opened with Finder's Open With.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard let coordinator else { return pendingOpenURLs += urls }
+        coordinator.openFiles(urls)
     }
 
     /// Clicking the Dock icon with no windows reopens the hub.

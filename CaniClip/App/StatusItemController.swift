@@ -7,6 +7,8 @@ struct StatusMenuActions {
     var openHub: () -> Void
     var openSettings: () -> Void
     var quit: () -> Void
+    var openImage: () -> Void = {}
+    var pasteImage: () -> Void = {}
 }
 
 enum StatusMenuTag: Int {
@@ -42,6 +44,10 @@ final class StatusItemController: NSObject {
         menu.item(withTag: tag.rawValue)
     }
 
+    func menuItem(titled title: String) -> NSMenuItem? {
+        menu.item(withTitle: title)
+    }
+
     func setRecording(_ recording: Bool) {
         isRecording = recording
         updateIcon()
@@ -57,6 +63,8 @@ final class StatusItemController: NSObject {
         menu.addItem(makeItem("Capture Area", #selector(captureArea), tag: .captureArea))
         menu.addItem(makeItem("Capture Full Screen", #selector(captureFullScreen), tag: .captureFullScreen))
         menu.addItem(makeItem("Record GIF", #selector(recordArea), tag: .recordArea))
+        menu.addItem(makeItem("Open Image…", #selector(openImage), tag: nil))
+        menu.addItem(makeItem("Paste Image", #selector(pasteImage), tag: nil))
         menu.addItem(.separator())
         let hub = makeItem("Open CaniClip", #selector(openHub), tag: nil)
         hub.keyEquivalent = "0"
@@ -104,6 +112,8 @@ final class StatusItemController: NSObject {
     @objc private func captureArea() { actions.captureArea() }
     @objc private func captureFullScreen() { actions.captureFullScreen() }
     @objc private func recordArea() { actions.recordArea() }
+    @objc private func openImage() { actions.openImage() }
+    @objc private func pasteImage() { actions.pasteImage() }
     @objc private func openHub() { actions.openHub() }
     @objc private func openSettings() { actions.openSettings() }
     @objc private func quit() { actions.quit() }

@@ -4,6 +4,7 @@ import KeyboardShortcuts
 struct HubView: View {
     @ObservedObject var viewModel: HubViewModel
     let actions: HubActions
+    @State private var dropTargeted = false
 
     private let columns = [GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 12)]
     private let sideInset: CGFloat = 16
@@ -27,6 +28,31 @@ struct HubView: View {
             }
         }
         .background(Color(nsColor: .windowBackgroundColor))
+        .overlay { if dropTargeted { dropHighlight } }
+        .onDrop(of: HubDrop.acceptedTypes, isTargeted: $dropTargeted) { providers in
+            HubDrop.load(providers) { content in
+                switch content {
+                case .urls(let urls): actions.openURLs(urls)
+                case .data(let data): actions.openImageData(data)
+                case nil: break
+                }
+            }
+            return true
+        }
+    }
+
+    private var dropHighlight: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [7, 5]))
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.accentColor.opacity(0.06)))
+            .overlay(
+                Label("Drop to open in the editor", systemImage: "photo.badge.plus")
+                    .font(.headline)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .background(.regularMaterial, in: Capsule())
+            )
+            .padding(8)
+            .allowsHitTesting(false)
     }
 
     private var header: some View {
@@ -52,12 +78,31 @@ struct HubView: View {
         .controlSize(.small)
     }
 
+    /// Four tiles in a row, or two rows of two when the window is narrow.
     private var actionRow: some View {
-        HStack(spacing: 10) {
-            ActionTile(title: "Capture Area", symbol: "viewfinder", shortcutName: .captureArea, tint: .blue, action: actions.captureArea)
-            ActionTile(title: "Full Screen", symbol: "macwindow", shortcutName: .captureFullScreen, tint: .indigo, action: actions.captureFullScreen)
-            ActionTile(title: "Record GIF", symbol: "record.circle", shortcutName: .recordArea, tint: .red, action: actions.recordArea)
+        let tiles = captureTiles
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                tiles.first
+                tiles.second
+                tiles.third
+                openTile
+            }
+            Grid(horizontalSpacing: 10, verticalSpacing: 10) {
+                GridRow { tiles.first; tiles.second }
+                GridRow { tiles.third; openTile }
+            }
         }
+    }
+
+    private var captureTiles: (first: ActionTile, second: ActionTile, third: ActionTile) {
+        (ActionTile(title: "Capture Area", symbol: "viewfinder", shortcutName: .captureArea, tint: .blue, action: actions.captureArea),
+         ActionTile(title: "Full Screen", symbol: "macwindow", shortcutName: .captureFullScreen, tint: .indigo, action: actions.captureFullScreen),
+         ActionTile(title: "Record GIF", symbol: "record.circle", shortcutName: .recordArea, tint: .red, action: actions.recordArea))
+    }
+
+    private var openTile: ActionTile {
+        ActionTile(title: "Open", symbol: "photo.badge.plus", shortcutText: "⌘O", tint: .teal, action: actions.openFile)
     }
 
     private var filterBar: some View {

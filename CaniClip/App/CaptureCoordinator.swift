@@ -247,6 +247,15 @@ final class CaptureCoordinator {
         }
     }
 
+    /// Image data dropped on the hub, such as an image dragged out of a browser.
+    func openImageData(_ data: Data) {
+        do {
+            openImported(try ImageImporter.image(from: data, title: "Dropped Image"))
+        } catch {
+            reportImportFailure(error, title: "Could not open")
+        }
+    }
+
     func pasteImage(from pasteboard: NSPasteboard = .general) {
         do {
             openImported(try ImageImporter.image(from: pasteboard))
@@ -415,7 +424,11 @@ final class CaptureCoordinator {
                 guard let self, let url = self.library.bestFileURL(for: $0) else { return }
                 NSWorkspace.shared.activateFileViewerSelecting([url])
             },
-            deleteRecord: { [weak self] in self?.deleteRecord($0) }
+            deleteRecord: { [weak self] in self?.deleteRecord($0) },
+            openFile: { [weak self] in self?.showOpenPanel() },
+            pasteImage: { [weak self] in self?.pasteImage() },
+            openURLs: { [weak self] in self?.openFiles($0) },
+            openImageData: { [weak self] in self?.openImageData($0) }
         )
     }
 

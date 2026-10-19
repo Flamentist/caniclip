@@ -1,6 +1,19 @@
 import AppKit
 import SwiftUI
 
+/// Hosts the hub and turns ⌘V into "paste an image into the editor"; the hub
+/// has no text fields, so nothing else wants it.
+final class HubHostingView: NSHostingView<HubView> {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
+        if event.type == .keyDown, modifiers == .command, event.charactersIgnoringModifiers?.lowercased() == "v" {
+            rootView.actions.pasteImage()
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+}
+
 @MainActor
 final class HubWindowController: NSWindowController, NSWindowDelegate {
     var onClose: (() -> Void)?
@@ -17,7 +30,7 @@ final class HubWindowController: NSWindowController, NSWindowDelegate {
         window.minSize = CGSize(width: 560, height: 380)
         window.isReleasedWhenClosed = false
         window.setFrameAutosaveName("CaniClipHub")
-        window.contentView = NSHostingView(rootView: HubView(viewModel: viewModel, actions: actions))
+        window.contentView = HubHostingView(rootView: HubView(viewModel: viewModel, actions: actions))
         if !window.setFrameUsingName("CaniClipHub") { window.center() }
         super.init(window: window)
         window.delegate = self

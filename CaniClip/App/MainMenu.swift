@@ -8,12 +8,16 @@ final class MenuActions: NSObject {
     var recordArea: () -> Void = {}
     var openHub: () -> Void = {}
     var openSettings: () -> Void = {}
+    var openFile: () -> Void = {}
+    var pasteImage: () -> Void = {}
 
     @objc func captureAreaAction(_ sender: Any?) { captureArea() }
     @objc func captureFullScreenAction(_ sender: Any?) { captureFullScreen() }
     @objc func recordAreaAction(_ sender: Any?) { recordArea() }
     @objc func openHubAction(_ sender: Any?) { openHub() }
     @objc func openSettingsAction(_ sender: Any?) { openSettings() }
+    @objc func openFileAction(_ sender: Any?) { openFile() }
+    @objc func pasteImageAction(_ sender: Any?) { pasteImage() }
 }
 
 /// The main menu is visible only while the hub is open (regular activation
@@ -42,6 +46,12 @@ enum MainMenu {
         let record = file.addItem(withTitle: "Record GIF", action: #selector(MenuActions.recordAreaAction(_:)), keyEquivalent: "")
         record.target = actions
         record.setShortcut(for: .recordArea)
+        file.addItem(.separator())
+        let open = file.addItem(withTitle: "Open…", action: #selector(MenuActions.openFileAction(_:)), keyEquivalent: "o")
+        open.target = actions
+        let paste = file.addItem(withTitle: "New from Clipboard", action: #selector(MenuActions.pasteImageAction(_:)), keyEquivalent: "v")
+        paste.keyEquivalentModifierMask = [.command, .shift]
+        paste.target = actions
         file.addItem(.separator())
         let hub = file.addItem(withTitle: "Open CaniClip", action: #selector(MenuActions.openHubAction(_:)), keyEquivalent: "0")
         hub.target = actions
