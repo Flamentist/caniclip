@@ -13,12 +13,14 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     var onClose: (() -> Void)?
     /// Reports every successful save (URL and rasterised image) so history can follow it.
     var onSaved: ((URL, CGImage) -> Void)?
+    /// The history entry this editor belongs to, if any.
+    var recordID: UUID?
 
     /// Asks the user what to do with unsaved annotations. Replaceable for tests.
     var unsavedPrompt: () -> UnsavedChoice = {
         let alert = NSAlert()
         alert.messageText = "Save your annotated screenshot?"
-        alert.informativeText = "Your annotations will be lost if you don't save them."
+        alert.informativeText = "If you don't, your annotations stay in CaniClip's history but no file is saved."
         alert.addButton(withTitle: "Save")
         alert.addButton(withTitle: "Don't Save")
         alert.addButton(withTitle: "Cancel")
@@ -40,14 +42,15 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     }
 
     /// `scalesStyleToFit`: imported images get annotation sizes scaled to the fit;
-    /// screenshots keep the defaults.
-    init(image: CGImage, preferences: PreferencesStore, title: String = "Screenshot", scalesStyleToFit: Bool = false) {
+    /// screenshots keep the defaults. `styleScale` (a reopened capture's) overrides both.
+    init(image: CGImage, preferences: PreferencesStore, title: String = "Screenshot", scalesStyleToFit: Bool = false,
+         styleScale: CGFloat? = nil, annotations: [Annotation] = []) {
         let screenFrame = NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         let layout = Self.layout(imagePixels: CGSize(width: image.width, height: image.height), scale: scale, screen: screenFrame)
         // A whole-number scale keeps stroke widths on the toolbar's menu steps.
-        let styleScale = scalesStyleToFit ? max(1, (1 / layout.fit).rounded()) : 1
-        self.editorDocument = EditorDocument(image: image, styleScale: styleScale)
+        let fitted: CGFloat = scalesStyleToFit ? max(1, (1 / layout.fit).rounded()) : 1
+        self.editorDocument = EditorDocument(image: image, styleScale: styleScale ?? fitted, annotations: annotations)
         self.preferences = preferences
 
         let window = NSWindow(contentRect: CGRect(origin: .zero, size: layout.content),

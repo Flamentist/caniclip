@@ -17,4 +17,8 @@ struct CaptureRecord: Identifiable, Codable, Equatable {
     var hasLibraryAsset: Bool
     var durationSeconds: Double?
     var frameCount: Int?
+    /// Editor window title for imported images ("photo.jpg"); nil means "Screenshot".
+    var title: String? = nil
+    /// Annotation size multiplier the editor used, so a reopened import matches.
+    var styleScale: Double? = nil
 }

@@ -19,12 +19,14 @@ final class EditorDocument: ObservableObject {
     @Published private(set) var isDirty = false
     private(set) var lastSavedURL: URL?
 
-    init(image: CGImage, styleScale: CGFloat = 1) {
+    /// `annotations`: edits restored from history; they start clean and not undoable.
+    init(image: CGImage, styleScale: CGFloat = 1, annotations: [Annotation] = []) {
         self.image = image
         self.pixelateService = PixelateService(base: image)
         self.styleScale = styleScale
         style.strokeWidth = (style.strokeWidth * styleScale).rounded()
         style.fontSize = (style.fontSize * styleScale).rounded()
+        self.annotations = annotations
         undoManager.levelsOfUndo = 100
     }
 

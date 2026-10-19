@@ -42,6 +42,8 @@ final class CaptureLibrary: ObservableObject {
 
     func assetURL(for id: UUID) -> URL { assetsURL.appendingPathComponent("\(id.uuidString).png") }
     func thumbnailURL(for id: UUID) -> URL { thumbsURL.appendingPathComponent("\(id.uuidString).jpg") }
+    /// The capture's annotations, kept so reopening it brings them back editable.
+    func editsURL(for id: UUID) -> URL { assetsURL.appendingPathComponent("\(id.uuidString).json") }
 
     /// The saved file if it still exists, else the library copy, else nil.
     func bestFileURL(for record: CaptureRecord) -> URL? {
@@ -58,7 +60,8 @@ final class CaptureLibrary: ObservableObject {
     // MARK: Mutations
 
     @discardableResult
-    func addScreenshot(_ image: CGImage, pngData: Data? = nil) throws -> CaptureRecord {
+    func addScreenshot(_ image: CGImage, pngData: Data? = nil, title: String? = nil,
+                       styleScale: Double? = nil) throws -> CaptureRecord {
         try ensureDirectories()
         let id = UUID()
         let png = try pngData ?? ImageExporter.pngData(from: image)
@@ -66,7 +69,8 @@ final class CaptureLibrary: ObservableObject {
         let record = CaptureRecord(id: id, kind: .screenshot, createdAt: Date(),
                                    pixelWidth: image.width, pixelHeight: image.height,
                                    fileSizeBytes: Int64(png.count), savedPath: nil,
-                                   hasLibraryAsset: true, durationSeconds: nil, frameCount: nil)
+                                   hasLibraryAsset: true, durationSeconds: nil, frameCount: nil,
+                                   title: title, styleScale: styleScale)
         do {
             try png.write(to: assetURL(for: id), options: .atomic)
             try writeThumbnail(of: image, id: id)
@@ -115,6 +119,25 @@ final class CaptureLibrary: ObservableObject {
         try commit(updated)
     }
 
+    /// Stores a capture's annotations (an empty list removes them) and, when given,
+    /// refreshes its thumbnail with the annotated image.
+    func saveEdits(_ annotations: [Annotation], for id: UUID, rendered: CGImage?) throws {
+        guard records.contains(where: { $0.id == id }) else { throw LibraryError.recordNotFound }
+        try ensureDirectories()
+        if annotations.isEmpty {
+            try? fm.removeItem(at: editsURL(for: id))
+        } else {
+            try JSONEncoder().encode(annotations).write(to: editsURL(for: id), options: .atomic)
+        }
+        if let rendered { try writeThumbnail(of: rendered, id: id) }
+    }
+
+    /// The capture's stored annotations; empty when there are none or they can't be read.
+    func edits(for id: UUID) -> [Annotation] {
+        guard let data = try? Data(contentsOf: editsURL(for: id)) else { return [] }
+        return (try? JSONDecoder().decode([Annotation].self, from: data)) ?? []
+    }
+
     func delete(id: UUID) throws {
         try commit(records.filter { $0.id != id })
         removeFiles(for: id)
@@ -159,6 +182,7 @@ final class CaptureLibrary: ObservableObject {
     private func removeFiles(for id: UUID) {
         try? fm.removeItem(at: assetURL(for: id))
         try? fm.removeItem(at: thumbnailURL(for: id))
+        try? fm.removeItem(at: editsURL(for: id))
     }
 
     /// Deletes files in assets/ and thumbs/ whose name is not a known record id.

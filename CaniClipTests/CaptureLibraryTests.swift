@@ -246,4 +246,55 @@ final class CaptureLibraryTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: lib.assetURL(for: kept.id).path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: lib.thumbnailURL(for: kept.id).path))
     }
+
+    // MARK: Edits
+
+    private let arrow = Annotation(kind: .arrow(from: CGPoint(x: 1, y: 1), to: CGPoint(x: 30, y: 15)))
+
+    func testEditsRoundTripAcrossInstancesAndRefreshTheThumbnail() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        let rec = try lib.addScreenshot(red())
+        let before = try Data(contentsOf: lib.thumbnailURL(for: rec.id))
+        try lib.saveEdits([arrow], for: rec.id, rendered: TestImages.solid(width: 40, height: 20, color: CGColor(srgbRed: 0, green: 0, blue: 1, alpha: 1)))
+        XCTAssertEqual(CaptureLibrary(rootURL: root).edits(for: rec.id), [arrow])
+        XCTAssertNotEqual(try Data(contentsOf: lib.thumbnailURL(for: rec.id)), before)
+    }
+
+    func testClearingEditsRemovesTheirFile() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        let rec = try lib.addScreenshot(red())
+        try lib.saveEdits([arrow], for: rec.id, rendered: nil)
+        try lib.saveEdits([], for: rec.id, rendered: nil)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: lib.editsURL(for: rec.id).path))
+        XCTAssertEqual(lib.edits(for: rec.id), [])
+    }
+
+    func testEditsForAnUnknownRecordAreRefused() {
+        let lib = CaptureLibrary(rootURL: root)
+        XCTAssertThrowsError(try lib.saveEdits([arrow], for: UUID(), rendered: nil))
+    }
+
+    func testDeleteRemovesEdits() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        let rec = try lib.addScreenshot(red())
+        try lib.saveEdits([arrow], for: rec.id, rendered: nil)
+        try lib.delete(id: rec.id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: lib.editsURL(for: rec.id).path))
+    }
+
+    func testOrphanSweepKeepsEditsOfLiveRecords() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        let rec = try lib.addScreenshot(red())
+        try lib.saveEdits([arrow], for: rec.id, rendered: nil)
+        try lib.prune(olderThan: 30)
+        XCTAssertEqual(lib.edits(for: rec.id), [arrow])
+    }
+
+    func testTitleAndStyleScalePersist() throws {
+        let lib = CaptureLibrary(rootURL: root)
+        let rec = try lib.addScreenshot(red(), title: "photo.jpg", styleScale: 3)
+        let reloaded = try XCTUnwrap(CaptureLibrary(rootURL: root).records.first { $0.id == rec.id })
+        XCTAssertEqual(reloaded.title, "photo.jpg")
+        XCTAssertEqual(reloaded.styleScale, 3)
+    }
 }

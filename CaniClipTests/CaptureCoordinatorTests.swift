@@ -187,4 +187,65 @@ final class CaptureCoordinatorTests: XCTestCase {
         coordinator.editorsForTesting[0].close()
         XCTAssertEqual(coordinator.appState.mode, .recording, "closing the editor must not end the recording state")
     }
+
+    // MARK: Reopening
+
+    private let box = Annotation(kind: .rect(CGRect(x: 2, y: 2, width: 6, height: 4)))
+
+    /// Captures into the editor, adds a box, then closes choosing Don't Save.
+    private func captureEditAndClose(_ coordinator: CaptureCoordinator) throws -> CaptureRecord {
+        coordinator.deliverScreenshot(TestImages.solid(width: 20, height: 12, color: CGColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)))
+        let editor = try XCTUnwrap(coordinator.editorsForTesting.first)
+        editor.editorDocument.add(box)
+        editor.unsavedPrompt = { .discard }
+        editor.close()
+        return try XCTUnwrap(coordinator.library.records.first)
+    }
+
+    func testReopeningACaptureBringsBackItsEditsStillEditable() throws {
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory(), afterCapture: .openEditor)
+        let record = try captureEditAndClose(coordinator)
+        XCTAssertEqual(coordinator.openEditorCount, 0)
+        coordinator.openRecord(record)
+        let reopened = try XCTUnwrap(coordinator.editorsForTesting.first)
+        XCTAssertEqual(reopened.editorDocument.annotations, [box], "Don't Save still keeps the edits in history")
+        XCTAssertFalse(reopened.editorDocument.isDirty)
+        coordinator.closeAllEditorsForTesting()
+    }
+
+    func testReopeningAnOpenCaptureBringsItsWindowForward() throws {
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory(), afterCapture: .openEditor)
+        coordinator.deliverScreenshot(TestImages.solid(width: 20, height: 12, color: CGColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)))
+        let record = try XCTUnwrap(coordinator.library.records.first)
+        coordinator.openRecord(record)
+        XCTAssertEqual(coordinator.openEditorCount, 1)
+        coordinator.closeAllEditorsForTesting()
+    }
+
+    func testReopenedImportKeepsItsTitleAndAnnotationScale() throws {
+        let coordinator = makeCoordinator(saveFolder: NSTemporaryDirectory())
+        coordinator.openFiles([try writePNG("photo.png", in: try tempFolder())])
+        let first = try XCTUnwrap(coordinator.editorsForTesting.first)
+        let scale = first.editorDocument.styleScale
+        first.close()
+        coordinator.openRecord(try XCTUnwrap(coordinator.library.records.first))
+        let reopened = try XCTUnwrap(coordinator.editorsForTesting.first)
+        XCTAssertEqual(reopened.window?.title, "photo.png")
+        XCTAssertEqual(reopened.editorDocument.styleScale, scale)
+        coordinator.closeAllEditorsForTesting()
+    }
+
+    func testSavingAReopenedCaptureOverwritesItsEarlierFile() throws {
+        let folder = try tempFolder()
+        let coordinator = makeCoordinator(saveFolder: folder.path, afterCapture: .openEditor)
+        coordinator.deliverScreenshot(TestImages.solid(width: 20, height: 12, color: CGColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)))
+        let editor = try XCTUnwrap(coordinator.editorsForTesting.first)
+        editor.editorDocument.add(box)
+        let saved = try editor.save()
+        editor.close()
+        coordinator.openRecord(try XCTUnwrap(coordinator.library.records.first))
+        let reopened = try XCTUnwrap(coordinator.editorsForTesting.first)
+        XCTAssertEqual(reopened.editorDocument.lastSavedURL, saved)
+        coordinator.closeAllEditorsForTesting()
+    }
 }

@@ -112,4 +112,13 @@ final class EditorDocumentTests: XCTestCase {
         doc.selectedID = box.id
         XCTAssertFalse(doc.isEditingText)
     }
+
+    func testRestoredAnnotationsAreCleanAndNotUndoable() {
+        let arrow = Annotation(kind: .arrow(from: .zero, to: CGPoint(x: 5, y: 5)))
+        let doc = EditorDocument(image: TestImages.solid(width: 16, height: 8, color: CGColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)),
+                                 annotations: [arrow])
+        XCTAssertEqual(doc.annotations, [arrow])
+        XCTAssertFalse(doc.isDirty)
+        XCTAssertFalse(doc.undoManager.canUndo)
+    }
 }

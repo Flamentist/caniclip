@@ -161,9 +161,10 @@ final class CaptureCoordinator {
     // MARK: History
 
     @discardableResult
-    private func recordScreenshot(_ image: CGImage, pngData: Data? = nil) -> UUID? {
+    private func recordScreenshot(_ image: CGImage, pngData: Data? = nil, title: String? = nil,
+                                  styleScale: CGFloat? = nil) -> UUID? {
         do {
-            let id = try library.addScreenshot(image, pngData: pngData).id
+            let id = try library.addScreenshot(image, pngData: pngData, title: title, styleScale: styleScale.map(Double.init)).id
             pruneHistory()
             return id
         } catch {
@@ -207,12 +208,16 @@ final class CaptureCoordinator {
 
     @discardableResult
     func openEditor(_ image: CGImage, recordID: UUID? = nil, title: String = "Screenshot",
-                    scalesStyleToFit: Bool = false) -> EditorWindowController {
+                    scalesStyleToFit: Bool = false, styleScale: CGFloat? = nil,
+                    annotations: [Annotation] = []) -> EditorWindowController {
         let controller = EditorWindowController(image: image, preferences: preferences, title: title,
-                                                scalesStyleToFit: scalesStyleToFit)
+                                                scalesStyleToFit: scalesStyleToFit, styleScale: styleScale,
+                                                annotations: annotations)
         attachRecord(recordID, to: controller)
         controller.onClose = { [weak self, weak controller] in
             guard let self else { return }
+            // Whatever the user chose about saving a file, history keeps their edits.
+            if let controller { self.storeEdits(of: controller) }
             self.editors.removeAll { $0 === controller }
             if self.editors.isEmpty, self.appState.mode == .editing {
                 self.appState.transition(to: .idle)
@@ -233,7 +238,8 @@ final class CaptureCoordinator {
     /// Opens an image from outside CaniClip in the editor and adds it to history.
     func openImported(_ imported: ImportedImage) {
         let controller = openEditor(imported.image, title: imported.title, scalesStyleToFit: true)
-        attachRecord(recordScreenshot(imported.image), to: controller)
+        let id = recordScreenshot(imported.image, title: imported.title, styleScale: controller.editorDocument.styleScale)
+        attachRecord(id, to: controller)
     }
 
     /// Opens the first of `urls`; the rest are ignored.
@@ -282,9 +288,11 @@ final class CaptureCoordinator {
     /// Links an editor's saves to its history record. Safe to call after the
     /// editor is already on screen: `onSaved` only fires on a later user save.
     private func attachRecord(_ recordID: UUID?, to controller: EditorWindowController) {
-        controller.onSaved = { [weak self] url, annotated in
+        controller.recordID = recordID
+        controller.onSaved = { [weak self, weak controller] url, annotated in
             guard let self, let recordID else { return }
             do { try self.library.markSaved(id: recordID, to: url, annotated: annotated) } catch { self.reportLibraryFailure(error) }
+            if let controller { self.storeEdits(of: controller) }
         }
     }
 
@@ -432,12 +440,37 @@ final class CaptureCoordinator {
         )
     }
 
-    private func openRecord(_ record: CaptureRecord) {
+    /// Keeps an editor's annotations with its history entry, and its thumbnail current.
+    private func storeEdits(of controller: EditorWindowController) {
+        guard let id = controller.recordID, library.records.contains(where: { $0.id == id }) else { return }
+        let document = controller.editorDocument
+        do {
+            try library.saveEdits(document.annotations, for: id, rendered: document.rasterize())
+        } catch {
+            reportLibraryFailure(error)
+        }
+    }
+
+    func openRecord(_ record: CaptureRecord) {
+        if let open = editors.first(where: { $0.recordID == record.id }) {
+            open.present()
+            return
+        }
         guard let url = library.bestFileURL(for: record) else { return }
         switch record.kind {
         case .screenshot:
-            let image = library.image(for: record.id) ?? ThumbnailMaker.firstFrame(ofImageAt: url)
-            guard let image else { return }
+            // The original capture plus its stored edits, still editable. Without the
+            // original only the saved (flattened) file is left, so edits can't apply.
+            if let original = library.image(for: record.id) {
+                let controller = openEditor(original, recordID: record.id, title: record.title ?? "Screenshot",
+                                            styleScale: record.styleScale.map { CGFloat($0) },
+                                            annotations: library.edits(for: record.id))
+                if let path = record.savedPath, FileManager.default.fileExists(atPath: path) {
+                    controller.editorDocument.markSaved(to: URL(fileURLWithPath: path))
+                }
+                return
+            }
+            guard let image = ThumbnailMaker.firstFrame(ofImageAt: url) else { return }
             openEditor(image, recordID: record.id)
         case .gif:
             NSWorkspace.shared.open(url)
