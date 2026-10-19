@@ -71,6 +71,16 @@ final class ReadmeAssetTests: XCTestCase {
                                        onStart: {}, onCancel: {})
             .background(.regularMaterial)
         try save(Image(nsImage: try snapshot(startBar, size: RecordStartView.size)), name: "start-bar")
+        let textDoc = EditorDocument(image: render(ChatSample(), size: CGSize(width: 800, height: 500)))
+        var big = AnnotationStyle()
+        big.fontSize = 40
+        let label = Annotation(kind: .text(origin: CGPoint(x: 380, y: 520), string: "Bug is here"), style: big)
+        textDoc.setAnnotationsWithoutUndo([label])
+        textDoc.selectedID = label.id
+        textDoc.tool = .select
+        let textSize = CGSize(width: 900, height: 600)
+        try save(Chrome(content: try snapshot(EditorView(document: textDoc, actions: EditorActions(copy: {}, save: {}, saveAs: {})),
+                                              size: textSize), size: textSize, title: "Screenshot"), name: "text-handles")
         let narrowHub = CGSize(width: 560, height: 420)
         try save(Chrome(content: try snapshot(HubView(viewModel: HubViewModel(library: try sampleLibrary()), actions: .noop),
                                               size: narrowHub), size: narrowHub, title: nil), name: "hub-narrow")
