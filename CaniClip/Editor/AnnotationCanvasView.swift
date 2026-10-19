@@ -120,7 +120,7 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
         case .ellipse:
             draft = Annotation(kind: .ellipse(CGRect(origin: p, size: .zero)), style: document.style)
         case .pixelate:
-            draft = Annotation(kind: .pixelate(CGRect(origin: p, size: .zero), blockSize: 12), style: document.style)
+            draft = Annotation(kind: .pixelate(CGRect(origin: p, size: .zero), blockSize: document.pixelateBlockSize), style: document.style)
         case .pen:
             draft = Annotation(kind: .pen([p]), style: document.style)
         case .highlighter:

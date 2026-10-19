@@ -62,4 +62,11 @@ final class EditorDocumentTests: XCTestCase {
         XCTAssertEqual(out.width, 16)
         XCTAssertEqual(out.height, 8)
     }
+
+    /// Redaction blocks must look as coarse on a big photo shown shrunk as on a screenshot.
+    func testPixelateBlockSizeFollowsTheStyleScale() {
+        let image = TestImages.solid(width: 16, height: 8, color: CGColor(srgbRed: 0, green: 1, blue: 0, alpha: 1))
+        XCTAssertEqual(EditorDocument(image: image).pixelateBlockSize, 12)
+        XCTAssertEqual(EditorDocument(image: image, styleScale: 2).pixelateBlockSize, 24)
+    }
 }

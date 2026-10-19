@@ -9,6 +9,8 @@ final class EditorDocument: ObservableObject {
     /// Multiplies the default stroke width and text size, so a large image shown
     /// shrunk in its window still gets annotations that look normal on screen.
     let styleScale: CGFloat
+    /// Pixelate block size in image pixels, scaled like strokes so redaction stays coarse.
+    var pixelateBlockSize: Int { Int((12 * styleScale).rounded()) }
 
     @Published private(set) var annotations: [Annotation] = []
     @Published var selectedID: UUID?

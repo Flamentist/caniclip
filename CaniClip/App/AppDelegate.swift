@@ -1,6 +1,19 @@
 import AppKit
 import KeyboardShortcuts
 
+/// What launch opens, in order. Files opened from Finder before launch finished
+/// come after the hub, so the editor ends up in front.
+enum LaunchSteps {
+    enum Step: Equatable {
+        case openHub
+        case openFiles([URL])
+    }
+
+    static func order(openHub: Bool, pendingFiles: [URL]) -> [Step] {
+        (openHub ? [.openHub] : []) + (pendingFiles.isEmpty ? [] : [.openFiles(pendingFiles)])
+    }
+}
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: StatusItemController?
@@ -45,10 +58,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeys = HotkeyController { kind in coordinator.handle(kind) }
         statusItem = status
         self.coordinator = coordinator
-        if !pendingOpenURLs.isEmpty {
-            coordinator.openFiles(pendingOpenURLs)
-            pendingOpenURLs = []
-        }
 
         if !ScreenRecordingPermission.isGranted {
             ScreenRecordingPermission.request()
@@ -57,10 +66,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Test runs host the real app; they must not consume the user's first
         // launch or pop the hub over the test runner.
         let isRunningTests = NSClassFromString("XCTestCase") != nil
-        if !isRunningTests,
-           PreferencesStore.shared.consumeFirstLaunch() || PreferencesStore.shared.preferences.openHubAtLaunch {
-            coordinator.openHub()
+        let showHub = !isRunningTests
+            && (PreferencesStore.shared.consumeFirstLaunch() || PreferencesStore.shared.preferences.openHubAtLaunch)
+        for step in LaunchSteps.order(openHub: showHub, pendingFiles: pendingOpenURLs) {
+            switch step {
+            case .openHub: coordinator.openHub()
+            case .openFiles(let urls): coordinator.openFiles(urls)
+            }
         }
+        pendingOpenURLs = []
     }
 
     /// Images dropped on the Dock icon or opened with Finder's Open With.
