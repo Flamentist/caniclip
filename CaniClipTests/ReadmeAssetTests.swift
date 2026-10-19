@@ -71,6 +71,9 @@ final class ReadmeAssetTests: XCTestCase {
                                        onStart: {}, onCancel: {})
             .background(.regularMaterial)
         try save(Image(nsImage: try snapshot(startBar, size: RecordStartView.size)), name: "start-bar")
+        let narrowHub = CGSize(width: 560, height: 420)
+        try save(Chrome(content: try snapshot(HubView(viewModel: HubViewModel(library: try sampleLibrary()), actions: .noop),
+                                              size: narrowHub), size: narrowHub, title: nil), name: "hub-narrow")
         let overlay = SelectionView(frame: CGRect(x: 0, y: 0, width: 900, height: 500), scale: 2)
         overlay.clickSelectsScreen = true
         let rep = try XCTUnwrap(overlay.bitmapImageRepForCachingDisplay(in: overlay.bounds))

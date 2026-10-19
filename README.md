@@ -37,6 +37,13 @@
 - **Undo** everything with `⌘Z`
 - **Copy** `⇧⌘C` or **save** `⌘S`
 
+## 📥 Open and paste
+
+- **Drop** an image on the CaniClip window or its Dock icon
+- Or press `⌘O` to **open** one, or `⌘V` in CaniClip to **paste** one (`⇧⌘V` from the menu)
+- It opens in the editor, ready to mark up
+- Your original file is never changed. Save makes a new PNG
+
 ## 🎞️ Record GIFs
 
 <img src="docs/media/recording.png" alt="A red frame around part of a dashboard with a recording timer and a Stop button" width="100%">
@@ -64,6 +71,8 @@
 | Capture an area | `⇧⌘7` |
 | Record a GIF of an area or the full screen | `⇧⌘8` (again to stop) |
 | Capture the full screen | `⇧⌘9` |
+| Open an image | `⌘O` (in CaniClip) |
+| Paste an image | `⌘V` in CaniClip, or `⇧⌘V` |
 | Cancel a selection | `Esc` |
 | Square selection | hold `⇧` while dragging |
 | Move the selection | hold `Space` while dragging |
